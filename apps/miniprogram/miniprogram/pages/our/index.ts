@@ -1,0 +1,303 @@
+import { getKitchenId } from '../../stores/kitchen.store';
+import { request } from '../../utils/request';
+import { downloadFile, uploadFile } from '../../utils/transfer';
+
+type Dish = {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  servings?: number | null;
+  coverImageUrl?: string | null;
+};
+type ManagedDish = Dish & { imageUrl: string; displayDescription: string; addedBy: string; ingredientsText: string; stepsText: string };
+type Story = { id: string; title: string; content: string; storyDate: string; displayDate: string };
+type FormData = {
+  dishId: string;
+  name: string;
+  description: string;
+  ingredientsText: string;
+  stepsText: string;
+  category: string;
+  servings: number;
+  coverImageUrl: string;
+  imageUrl: string;
+};
+
+const operators = [
+  { code: '德德', label: '德德' },
+  { code: '桐桐', label: '桐桐' },
+];
+const categoryOptions = ['热菜', '凉菜', '汤羹', '主食', '小吃', '家常菜', '泡酱腌菜', '西餐', '烘焙', '烤箱菜', '饮品', '零食', '火锅', '海鲜', '自制食材'];
+const emptyForm: FormData = { dishId: '', name: '', description: '', ingredientsText: '', stepsText: '', category: '家常菜', servings: 2, coverImageUrl: '', imageUrl: '' };
+const metaMarker = '【菜品详情】';
+const legacyAddedByPattern = /(?:^|\n)添加人：([^\n]+)\s*$/;
+
+Page({
+  data: {
+    stories: [] as Story[],
+    dishes: [] as ManagedDish[],
+    operators,
+    categoryOptions,
+    operatorIndex: 0,
+    categoryIndex: categoryOptions.indexOf(emptyForm.category),
+    form: emptyForm,
+    editing: false,
+    loading: false,
+    dishesLoading: false,
+    savingDish: false,
+    uploadProgress: 0,
+    error: '',
+    dishError: '',
+  },
+  async onShow() { await this.load(); },
+  async load() {
+    const kitchenId = getKitchenId();
+    if (!kitchenId) return;
+    this.setData({ loading: true, dishesLoading: true, error: '', dishError: '' });
+    try {
+      const [stories, dishes] = await Promise.all([
+        request<Story[]>(`/kitchens/${kitchenId}/stories`),
+        request<Dish[]>(`/kitchens/${kitchenId}/dishes`),
+      ]);
+      this.setData({ stories: stories.map(toDisplayStory), dishes: await hydrateDishes(kitchenId, dishes) });
+    } catch (error) {
+      this.setData({ error: error instanceof Error ? error.message : '加载失败' });
+    } finally {
+      this.setData({ loading: false, dishesLoading: false });
+    }
+  },
+  onOperatorChange(event: WechatMiniprogram.PickerChange) { this.setData({ operatorIndex: Number(event.detail.value) }); },
+  onCategoryChange(event: WechatMiniprogram.PickerChange) {
+    const categoryIndex = Number(event.detail.value);
+    this.setData({ categoryIndex, 'form.category': categoryOptions[categoryIndex] || emptyForm.category });
+  },
+  startAddDish() { this.setData({ editing: true, form: { ...emptyForm }, categoryIndex: categoryOptions.indexOf(emptyForm.category), uploadProgress: 0, dishError: '' }); },
+  editDish(event: WechatMiniprogram.TouchEvent) {
+    const dish = this.data.dishes.find((candidate) => candidate.id === event.currentTarget.dataset.id);
+    if (!dish) return;
+    const operatorIndex = Math.max(0, operators.findIndex((operator) => operator.code === dish.addedBy));
+    const category = dish.category || emptyForm.category;
+    const categoryIndex = Math.max(0, categoryOptions.indexOf(category));
+    this.setData({
+      editing: true,
+      operatorIndex,
+      categoryIndex,
+      uploadProgress: 0,
+      dishError: '',
+      form: {
+        dishId: dish.id,
+        name: dish.name,
+        description: dish.displayDescription,
+        ingredientsText: dish.ingredientsText,
+        stepsText: dish.stepsText,
+        category,
+        servings: dish.servings || 2,
+        coverImageUrl: dish.coverImageUrl || '',
+        imageUrl: dish.imageUrl,
+      },
+    });
+  },
+  cancelEditDish() { this.setData({ editing: false, form: { ...emptyForm }, uploadProgress: 0, dishError: '' }); },
+  onDishName(event: WechatMiniprogram.Input) { this.setData({ 'form.name': event.detail.value }); },
+  onDishDescription(event: WechatMiniprogram.Input) { this.setData({ 'form.description': event.detail.value }); },
+  onDishIngredients(event: WechatMiniprogram.Input) { this.setData({ 'form.ingredientsText': event.detail.value }); },
+  onDishSteps(event: WechatMiniprogram.Input) { this.setData({ 'form.stepsText': event.detail.value }); },
+  onDishServings(event: WechatMiniprogram.Input) { this.setData({ 'form.servings': Math.max(1, Math.min(24, Number(event.detail.value) || 2)) }); },
+  chooseDishImage() {
+    const kitchenId = getKitchenId();
+    if (!kitchenId) return wx.showToast({ title: '请先进入厨房', icon: 'none' });
+    wx.chooseMedia({
+      count: 1,
+      mediaType: ['image'],
+      success: (result) => {
+        const file = result.tempFiles?.[0];
+        if (!file) return;
+        this.setData({ uploadProgress: 1, 'form.imageUrl': file.tempFilePath });
+        const transfer = uploadFile<{ id: string }>(`/kitchens/${kitchenId}/uploads`, file.tempFilePath);
+        transfer.onProgress((uploadProgress) => this.setData({ uploadProgress }));
+        transfer.promise
+          .then((uploaded) => {
+            this.setData({ 'form.coverImageUrl': uploaded.id, uploadProgress: 100 });
+            wx.showToast({ title: '图片已上传', icon: 'success' });
+          })
+          .catch((error: unknown) => wx.showToast({ title: error instanceof Error ? error.message : '图片上传失败', icon: 'none' }));
+      },
+    });
+  },
+  async saveDish() {
+    const kitchenId = getKitchenId();
+    const form = this.data.form;
+    const operator = operators[this.data.operatorIndex]?.code || '德德';
+    if (!kitchenId) return wx.showToast({ title: '请先进入厨房', icon: 'none' });
+    if (!form.name.trim()) return wx.showToast({ title: '请填写菜名', icon: 'none' });
+    this.setData({ savingDish: true, dishError: '' });
+    try {
+      const path = form.dishId ? `/kitchens/${kitchenId}/dishes/${form.dishId}` : `/kitchens/${kitchenId}/dishes`;
+      await request(path, {
+        method: form.dishId ? 'PATCH' : 'POST',
+        data: {
+          name: form.name.trim(),
+          description: withDishMeta(form.description.trim(), operator, form.ingredientsText.trim(), form.stepsText.trim()),
+          category: form.category || emptyForm.category,
+          servings: form.servings,
+          coverImageUrl: form.coverImageUrl || undefined,
+        },
+      });
+      wx.showToast({ title: form.dishId ? '菜品已更新' : '菜品已添加', icon: 'success' });
+      this.setData({ editing: false, form: { ...emptyForm }, uploadProgress: 0 });
+      await this.loadDishes();
+    } catch (error) {
+      this.setData({ dishError: error instanceof Error ? error.message : '菜品保存失败' });
+    } finally {
+      this.setData({ savingDish: false });
+    }
+  },
+  deleteDish(event: WechatMiniprogram.TouchEvent) {
+    const dishId = event.currentTarget.dataset.id as string;
+    const dish = this.data.dishes.find((candidate) => candidate.id === dishId);
+    if (!dish) return;
+    wx.showModal({
+      title: '删除菜品',
+      content: `确认删除「${dish.name}」吗？`,
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        const kitchenId = getKitchenId();
+        try {
+          await request(`/kitchens/${kitchenId}/dishes/${dishId}`, { method: 'DELETE' });
+          wx.showToast({ title: '菜品已删除', icon: 'success' });
+          await this.loadDishes();
+        } catch (error) {
+          wx.showToast({ title: error instanceof Error ? error.message : '删除失败', icon: 'none' });
+        }
+      },
+    });
+  },
+  openDish(event: WechatMiniprogram.TouchEvent) { wx.navigateTo({ url: `/pages/dishes/detail?dishId=${event.currentTarget.dataset.id}` }); },
+  async loadDishes() {
+    const kitchenId = getKitchenId();
+    if (!kitchenId) return;
+    this.setData({ dishesLoading: true, dishError: '' });
+    try {
+      this.setData({ dishes: await hydrateDishes(kitchenId, await request<Dish[]>(`/kitchens/${kitchenId}/dishes`)) });
+    } catch (error) {
+      this.setData({ dishError: error instanceof Error ? error.message : '菜品加载失败' });
+    } finally {
+      this.setData({ dishesLoading: false });
+    }
+  },
+  addStory() {
+    wx.showModal({
+      title: '故事标题',
+      editable: true,
+      placeholderText: '例如：第一次一起做饭',
+      success: (titleResult) => {
+        const title = titleResult.content?.trim() || '';
+        if (!titleResult.confirm) return;
+        if (!title) return void wx.showToast({ title: '请输入故事标题', icon: 'none' });
+        wx.showModal({
+          title: '故事内容',
+          editable: true,
+          placeholderText: '写下今天值得记住的事',
+          success: async (contentResult) => {
+            const content = contentResult.content?.trim() || '';
+            if (!contentResult.confirm) return;
+            if (!content) return void wx.showToast({ title: '请输入故事内容', icon: 'none' });
+            const kitchenId = getKitchenId();
+            try {
+              await request(`/kitchens/${kitchenId}/stories`, { method: 'POST', data: { title, content, storyDate: new Date().toISOString(), storyType: 'DAILY_MEMORY' } });
+              await this.loadStories();
+              wx.showToast({ title: '故事已保存', icon: 'success' });
+            } catch (error) { wx.showToast({ title: error instanceof Error ? error.message : '保存失败', icon: 'none' }); }
+          },
+        });
+      },
+    });
+  },
+  async loadStories() {
+    const kitchenId = getKitchenId();
+    if (!kitchenId) return;
+    const stories = await request<Story[]>(`/kitchens/${kitchenId}/stories`);
+    this.setData({ stories: stories.map(toDisplayStory) });
+  },
+  deleteStory(event: WechatMiniprogram.TouchEvent) {
+    const storyId = event.currentTarget.dataset.id as string;
+    const story = this.data.stories.find((candidate) => candidate.id === storyId);
+    if (!story) return;
+    wx.showModal({
+      title: '删除故事',
+      content: `确定删除「${story.title}」吗？`,
+      success: async ({ confirm }) => {
+        if (!confirm) return;
+        try {
+          await request(`/kitchens/${getKitchenId()}/stories/${storyId}`, { method: 'DELETE' });
+          await this.loadStories();
+          wx.showToast({ title: '故事已删除', icon: 'success' });
+        } catch (error) { wx.showToast({ title: error instanceof Error ? error.message : '删除失败', icon: 'none' }); }
+      },
+    });
+  },
+  account() { wx.navigateTo({ url: '/pages/account/index' }); },
+});
+
+function toDisplayStory(story: Story): Story {
+  const date = new Date(story.storyDate);
+  const displayDate = Number.isNaN(date.getTime()) ? story.storyDate : `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+  return { ...story, displayDate };
+}
+
+async function hydrateDishes(kitchenId: string, dishes: Dish[]): Promise<ManagedDish[]> {
+  return Promise.all(dishes.map(async (dish) => {
+    const parsed = parseDescription(dish.description);
+    return { ...dish, imageUrl: await resolveDishImage(kitchenId, dish.coverImageUrl), displayDescription: parsed.description, addedBy: parsed.addedBy, ingredientsText: parsed.ingredientsText, stepsText: parsed.stepsText };
+  }));
+}
+
+function parseDescription(value?: string | null) {
+  const raw = value || '';
+  const [descriptionPart = '', metaPart = ''] = raw.split(metaMarker);
+  const meta = parseMeta(metaPart);
+  const legacyMatch = descriptionPart.match(legacyAddedByPattern);
+  return {
+    description: descriptionPart.replace(legacyAddedByPattern, '').trim(),
+    addedBy: displayOperatorName(meta.addedBy || legacyMatch?.[1] || ''),
+    ingredientsText: meta.ingredientsText,
+    stepsText: meta.stepsText,
+  };
+}
+
+function withDishMeta(description: string, operator: string, ingredientsText: string, stepsText: string) {
+  const clean = description.split(metaMarker)[0]?.replace(legacyAddedByPattern, '').trim() || '';
+  return `${clean}\n\n${metaMarker}\n添加人：${operator}\n食材清单：\n${ingredientsText}\n步骤：\n${stepsText}`.trim();
+}
+
+function parseMeta(value: string) {
+  const lines = value.split(/\r?\n/);
+  let section = '';
+  const ingredients: string[] = [];
+  const steps: string[] = [];
+  let addedBy = '';
+  for (const line of lines) {
+    const text = line.trim();
+    if (!text) continue;
+    if (text.startsWith('添加人：')) { addedBy = text.replace('添加人：', '').trim(); continue; }
+    if (text === '食材清单：') { section = 'ingredients'; continue; }
+    if (text === '步骤：') { section = 'steps'; continue; }
+    if (section === 'ingredients') ingredients.push(text);
+    if (section === 'steps') steps.push(text);
+  }
+  return { addedBy, ingredientsText: ingredients.join('\n'), stepsText: steps.join('\n') };
+}
+
+function displayOperatorName(value: string) {
+  if (value === 'HZH') return '德德';
+  if (value === 'ZXT') return '桐桐';
+  return value || '未记录';
+}
+
+async function resolveDishImage(kitchenId: string, reference?: string | null) {
+  if (!reference) return '';
+  if (/^https?:\/\//i.test(reference)) return reference;
+  try { return await downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`).promise; }
+  catch { return ''; }
+}

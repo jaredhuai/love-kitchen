@@ -1,0 +1,2 @@
+export type Nutrient={weightGrams:number;caloriesPer100g:number;proteinPer100g:number;fatPer100g:number;carbsPer100g:number};
+export function calculateNutrition(items:Nutrient[],servings:number){if(!Number.isFinite(servings)||servings<=0)throw new Error('份数必须大于 0');const sum=(key:keyof Omit<Nutrient,'weightGrams'>)=>items.reduce((n,i)=>n+i.weightGrams*i[key]/100,0);return{totalCalories:sum('caloriesPer100g'),caloriesPerServing:sum('caloriesPer100g')/servings,proteinG:sum('proteinPer100g')/servings,fatG:sum('fatPer100g')/servings,carbsG:sum('carbsPer100g')/servings};}

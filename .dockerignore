@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+.codex-artifacts
+node_modules
+uploads
+apps/miniprogram
+apps/worker
+**/dist
+**/coverage
+**/*.log

@@ -1,0 +1,4 @@
+export type MealPreference={cuisines:string[];tastes:string[];ingredients:string[];spicyLevel:number;maxMinutes:number;budget:number;calorieTarget:number};
+const overlap=(a:string[],b:string[])=>{const x=new Set(a.map(v=>v.trim().toLowerCase()));const y=new Set(b.map(v=>v.trim().toLowerCase()));const union=new Set([...x,...y]);return union.size===0?1:[...x].filter(v=>y.has(v)).length/union.size};
+const closeness=(a:number,b:number,range:number)=>Math.max(0,1-Math.abs(a-b)/Math.max(range,1));
+export function compatibilityScore(a:MealPreference,b:MealPreference){return Math.round(100*(.2*overlap(a.cuisines,b.cuisines)+.25*overlap(a.tastes,b.tastes)+.2*overlap(a.ingredients,b.ingredients)+.1*closeness(a.spicyLevel,b.spicyLevel,4)+.1*closeness(a.maxMinutes,b.maxMinutes,60)+.05*closeness(a.budget,b.budget,200)+.1*closeness(a.calorieTarget,b.calorieTarget,800)));}

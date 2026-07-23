@@ -1,0 +1,26 @@
+<view class="page">
+  <view class="title">统计</view>
+  <view class="subtitle">哇，最近都有好好吃饭哎！</view>
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+  <view wx:if="{{error}}" class="state"><text>{{error}}</text><button bindtap="load">重试</button></view>
+  <view wx:if="{{!loading && !error}}">
+    <view class="summary-grid">
+      <view class="summary-card"><text class="summary-number">{{todayCompleted}}</text><text class="summary-label">今日完成</text></view>
+      <view class="summary-card"><text class="summary-number">{{todayCancelled}}</text><text class="summary-label">今日取消</text></view>
+      <view class="summary-card"><text class="summary-number">{{weekCompleted}}</text><text class="summary-label">近 7 天完成</text></view>
+      <view class="summary-card"><text class="summary-number">{{averageRating}}</text><text class="summary-label">平均评分</text></view>
+    </view>
+    <view class="insight-card"><text class="insight-title">最常吃的餐次</text><text class="insight-value">{{favoriteMeal}}</text></view>
+    <view class="section-title">每天完成记录</view>
+    <view wx:if="{{!days.length}}" class="state compact">还没有完成记录。</view>
+    <view wx:for="{{days}}" wx:key="date" class="day-card">
+      <view class="day-head" data-date="{{item.date}}" bindtap="toggleDay"><view><text class="day-date">{{item.label}}</text><text class="day-count">{{item.completed}} 完成 · {{item.cancelled}} 取消</text></view><text class="fold-arrow">{{item.expanded ? '⌃' : '⌄'}}</text></view>
+      <view wx:if="{{item.expanded}}" class="day-events">
+        <view wx:for="{{item.events}}" wx:for-item="record" wx:key="id" class="day-event {{record.cancelled ? 'cancelled' : ''}}"><text class="event-time">{{record.time}}</text><view class="event-main"><text class="event-dish">{{record.dishName}}</text><text class="event-meal">{{record.mealLabel}}</text></view><text class="event-status">{{record.status}}</text></view>
+      </view>
+    </view>
+    <view class="section-title">常吃菜品</view>
+    <view wx:if="{{!topDishes.length}}" class="state compact">还没有完成记录。</view>
+    <view wx:for="{{topDishes}}" wx:key="name" class="top-row"><text>{{item.name}}</text><text>{{item.count}} 次</text></view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+export type ApiError = { code: string; message: string; details: unknown; requestId?: string };
+export type ApiEnvelope<T> = { success: true; data: T; requestId?: string } | { success: false; error: ApiError; requestId?: string };
+export type TokenPair = { accessToken: string; refreshToken: string; user: UserContract; kitchen?: MembershipContract | null };
+export type UserContract = { id: string; nickname: string; avatarUrl?: string | null };
+export type KitchenContract = { id: string; name: string; slogan?: string | null };
+export type MembershipContract = { kitchenId: string; role: 'OWNER' | 'MEMBER' };
+export type NotificationContract = { id: string; kitchenId: string; userId: string; type: string; title: string; content: string; readAt?: string | null; createdAt: string };
+export type PageInfo = { nextCursor: string | null; hasNextPage: boolean };
+export type CursorPage<T> = { items: T[]; pageInfo: PageInfo };

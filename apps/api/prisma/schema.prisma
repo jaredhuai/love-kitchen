@@ -1,0 +1,1168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+  url = env("DATABASE_URL")
+}
+
+enum KitchenRole {
+  OWNER
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  LEFT
+  REMOVED
+}
+
+enum InviteStatus {
+  ACTIVE
+  USED
+  REVOKED
+}
+
+enum DishSource {
+  MANUAL
+  AI_GENERATED
+  IMPORTED
+}
+
+enum DishStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}
+
+enum MealPreferenceSessionState {
+  OPEN
+  READY_TO_REVEAL
+  REVEALED
+  CLOSED
+}
+
+enum StorageLocation {
+  FRIDGE
+  FREEZER
+  PANTRY
+  OTHER
+}
+
+enum LetterUnlockType {
+  DATE
+  DISH_COUNT
+  MEAL_COUNT
+  MANUAL
+}
+
+enum SecurityEventType {
+  LOGIN_FAILED
+  TOKEN_REUSED
+  INVITE_BRUTE_FORCE
+  KITCHEN_ACCESS_DENIED
+  UPLOAD_REJECTED
+  AI_ABUSE
+  RATE_LIMITED
+}
+
+enum SecurityEventSeverity {
+  INFO
+  WARN
+  HIGH
+}
+
+enum UserStatus {
+  ACTIVE
+  DELETION_PENDING
+  DEACTIVATED
+}
+
+enum DataExportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+enum AccountDeletionJobStatus {
+  COOLING_OFF
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  FAILED
+  RESTORED
+}
+
+enum AiUsageStatus {
+  IN_PROGRESS
+  SUCCEEDED
+  DEGRADED
+  FAILED
+}
+
+model User {
+  id String @id @default(uuid()) @db.Uuid
+
+  devKey String? @unique
+
+  wechatOpenId String? @unique
+
+  nickname String @db.VarChar(80)
+
+  status UserStatus @default(ACTIVE)
+
+  deactivatedAt DateTime?
+
+  avatarUrl String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  profile UserProfile?
+
+  memberships KitchenMember[]
+
+  refreshTokens RefreshToken[]
+
+  wechatIdentities WechatIdentity[]
+
+  refreshTokenSessions RefreshTokenSession[]
+
+  securityEvents SecurityEvent[]
+
+  dataExportJobs DataExportJob[]
+
+  accountDeletionJobs AccountDeletionJob[]
+}
+
+model DataExportJob {
+  id          String              @id @default(uuid()) @db.Uuid
+  userId      String              @db.Uuid
+  requestKey  String
+  status      DataExportJobStatus @default(PENDING)
+  result      Json?
+  attempts    Int                 @default(0)
+  lastError   String?
+  expiresAt   DateTime
+  createdAt   DateTime            @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  updatedAt   DateTime            @updatedAt
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, requestKey])
+  @@index([status, createdAt])
+  @@index([expiresAt])
+}
+
+model AccountDeletionJob {
+  id                String                   @id @default(uuid()) @db.Uuid
+  userId            String                   @db.Uuid
+  requestKey        String
+  status            AccountDeletionJobStatus @default(COOLING_OFF)
+  scheduledFor      DateTime
+  recoveryTokenHash String
+  dryRun            Json
+  attempts          Int                      @default(0)
+  lastError         String?
+  createdAt         DateTime                 @default(now())
+  cancelledAt       DateTime?
+  completedAt       DateTime?
+  restoredAt        DateTime?
+  updatedAt         DateTime                 @updatedAt
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, requestKey])
+  @@index([userId, status])
+  @@index([status, scheduledFor])
+}
+
+model AiUsageRecord {
+  id                    String        @id @default(uuid()) @db.Uuid
+  kitchenId             String        @db.Uuid
+  userId                String        @db.Uuid
+  requestKey            String
+  status                AiUsageStatus @default(IN_PROGRESS)
+  provider              String
+  model                  String?
+  estimatedInputTokens  Int           @default(0)
+  estimatedOutputTokens Int           @default(0)
+  costMicros            Int           @default(0)
+  latencyMs             Int?
+  response              Json?
+  errorCode             String?
+  expiresAt             DateTime
+  createdAt             DateTime      @default(now())
+  completedAt           DateTime?
+  updatedAt             DateTime      @updatedAt
+
+  @@unique([userId, kitchenId, requestKey])
+  @@index([userId, createdAt, status])
+  @@index([kitchenId, createdAt, status])
+  @@index([expiresAt])
+}
+
+model WechatIdentity {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  appId       String    @db.VarChar(128)
+  openId      String    @db.VarChar(128)
+  unionId     String?   @db.VarChar(128)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, openId])
+  @@unique([userId, appId])
+  @@index([unionId])
+}
+
+model UserProfile {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @unique @db.Uuid
+
+  heightCm Float?
+
+  weightKg Float?
+
+  activityLevel String?
+
+  calorieTarget Int?
+
+  preferences Json?
+
+  allergens String[]
+
+  avoidIngredients String[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id String @id
+
+  userId String @db.Uuid
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+
+  revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+}
+
+model RefreshTokenSession {
+  id              String               @id
+  userId          String               @db.Uuid
+  familyId        String
+  tokenHash       String               @unique
+  deviceId        String?              @db.VarChar(128)
+  userAgentHash   String?              @db.VarChar(128)
+  issuedAt        DateTime             @default(now())
+  expiresAt       DateTime
+  rotatedFromId   String?              @unique
+  revokedAt       DateTime?
+  revokeReason    String?              @db.VarChar(80)
+  reuseDetectedAt DateTime?
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rotatedFrom     RefreshTokenSession? @relation("RefreshTokenRotation", fields: [rotatedFromId], references: [id], onDelete: SetNull)
+  rotatedTo       RefreshTokenSession? @relation("RefreshTokenRotation")
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([familyId])
+}
+
+model SecurityEvent {
+  id         String                @id @default(uuid()) @db.Uuid
+  userId     String?               @db.Uuid
+  kitchenId  String?               @db.Uuid
+  eventType  SecurityEventType
+  severity   SecurityEventSeverity @default(INFO)
+  requestId  String?
+  ipHash     String?
+  metadata   Json?
+  occurredAt DateTime              @default(now())
+  user       User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  kitchen    Kitchen?              @relation(fields: [kitchenId], references: [id], onDelete: SetNull)
+
+  @@index([userId, occurredAt])
+  @@index([kitchenId, occurredAt])
+  @@index([eventType, occurredAt])
+}
+
+model Kitchen {
+  id String @id @default(uuid()) @db.Uuid
+
+  name String @db.VarChar(80)
+
+  avatarUrl String?
+
+  slogan String? @db.VarChar(160)
+
+  maxMembers Int @default(2)
+
+  defaultServings Int @default(2)
+
+  defaultCalorieTarget Int?
+
+  relationshipStartedAt DateTime?
+
+  anniversaryAt DateTime?
+
+  createdBy String @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  members KitchenMember[]
+
+  invites KitchenInvite[]
+
+  dishes Dish[]
+
+  timeline TimelineEvent[]
+
+  securityEvents SecurityEvent[]
+
+  @@index([deletedAt])
+}
+
+model KitchenMember {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  userId String @db.Uuid
+
+  role KitchenRole
+
+  status MemberStatus @default(ACTIVE)
+
+  joinedAt DateTime @default(now())
+
+  leftAt DateTime?
+
+  kitchen Kitchen @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([kitchenId, userId])
+  @@index([userId, status])
+  @@index([kitchenId, status])
+}
+
+model KitchenInvite {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  tokenHash String @unique
+
+  createdBy String @db.Uuid
+
+  expiresAt DateTime
+
+  usedAt DateTime?
+
+  usedBy String? @db.Uuid
+
+  revokedAt DateTime?
+
+  status InviteStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+
+  kitchen Kitchen @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+
+  @@index([kitchenId, status, expiresAt])
+}
+
+model Dish {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  name String @db.VarChar(100)
+
+  description String? @db.VarChar(1000)
+
+  category String?
+
+  cuisine String?
+
+  coverImageUrl String?
+
+  difficulty Int?
+
+  prepMinutes Int?
+
+  cookMinutes Int?
+
+  servings Int @default(2)
+
+  caloriesPerServing Float?
+
+  proteinG Float?
+
+  fatG Float?
+
+  carbsG Float?
+
+  tags String[]
+
+  sourceType DishSource @default(MANUAL)
+
+  createdBy String @db.Uuid
+
+  isFavorite Boolean @default(false)
+
+  status DishStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  kitchen Kitchen @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+
+  ingredients DishIngredient[]
+
+  steps RecipeStep[]
+
+  reviews DishReview[]
+
+  @@index([kitchenId, deletedAt, createdAt])
+  @@index([kitchenId, name])
+}
+
+model DishIngredient {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  dishId String @db.Uuid
+
+  ingredientId String? @db.Uuid
+
+  displayName String
+
+  quantity Float?
+
+  unit String?
+
+  weightGrams Float?
+
+  calories Float?
+
+  proteinG Float?
+
+  fatG Float?
+
+  carbsG Float?
+
+  isOptional Boolean @default(false)
+
+  sortOrder Int
+
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@index([kitchenId, dishId])
+}
+
+model RecipeStep {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  dishId String @db.Uuid
+
+  stepNo Int
+
+  content String
+
+  durationMinutes Int?
+
+  imageUrl String?
+
+  tip String?
+
+  heatLevel String?
+
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, stepNo])
+  @@index([kitchenId, dishId])
+}
+
+model DishReview {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  dishId String @db.Uuid
+
+  userId String @db.Uuid
+
+  tasteRating Int
+
+  appearanceRating Int
+
+  careRating Int
+
+  difficulty Int?
+
+  spicyLevel Int?
+
+  saltiness Int?
+
+  eatAgain Boolean
+
+  content String?
+
+  noteToCook String?
+
+  imageUrls String[]
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, userId])
+  @@index([kitchenId, dishId])
+}
+
+model MealPreferenceSession {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  mealDate DateTime @db.Date
+
+  mealType MealType
+
+  state MealPreferenceSessionState @default(OPEN)
+
+  version Int @default(0)
+
+  compatibilityScore Int?
+
+  revealedAt DateTime?
+
+  closedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  submissions MealPreferenceSubmission[]
+
+  @@unique([kitchenId, mealDate, mealType])
+  @@index([kitchenId, mealDate])
+  @@index([kitchenId, state, mealDate])
+}
+
+model MealPreferenceSubmission {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  sessionId String @db.Uuid
+
+  userId String @db.Uuid
+
+  hiddenBeforeReveal Boolean @default(true)
+
+  preferencePayload Json
+
+  submittedAt DateTime @default(now())
+
+  revealedAt DateTime?
+
+  session MealPreferenceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+  @@index([kitchenId, sessionId])
+}
+
+model TimelineEvent {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  eventType String
+
+  eventDate DateTime
+
+  title String
+
+  description String?
+
+  imageUrl String?
+
+  relatedResourceType String?
+
+  relatedResourceId String? @db.Uuid
+
+  generatedBySystem Boolean @default(false)
+
+  createdBy String? @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  kitchen Kitchen @relation(fields: [kitchenId], references: [id], onDelete: Cascade)
+
+  @@index([kitchenId, eventDate])
+}
+
+model MealPlanGroup {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  weekStart DateTime @db.Date
+
+  title String?
+
+  createdBy String @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  plans MealPlan[]
+
+  @@unique([kitchenId, weekStart])
+  @@index([kitchenId])
+}
+
+model MealPlan {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  groupId String @db.Uuid
+
+  dishId String? @db.Uuid
+
+  mealDate DateTime @db.Date
+
+  mealType MealType
+
+  servings Int @default(2)
+
+  cookUserId String? @db.Uuid
+
+  status String @default("PLANNED")
+
+  createdBy String @db.Uuid
+
+  group MealPlanGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  votes MealVote[]
+
+  @@index([kitchenId, mealDate])
+}
+
+model MealVote {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  mealPlanId String @db.Uuid
+
+  userId String @db.Uuid
+
+  value Int
+
+  plan MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([mealPlanId, userId])
+  @@index([kitchenId])
+}
+
+model MealLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  mealPlanId String? @db.Uuid
+
+  dishId String? @db.Uuid
+
+  eatenAt DateTime
+
+  mealType MealType
+
+  servings Float
+
+  eaterUserIds String[]
+
+  calories Float?
+
+  proteinG Float?
+
+  fatG Float?
+
+  carbsG Float?
+
+  notes String?
+
+  imageUrls String[]
+
+  cookedBy String? @db.Uuid
+
+  createdBy String @db.Uuid
+
+  wasPlanned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([kitchenId, eatenAt])
+}
+
+model CookingAssignment {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  assignmentDate DateTime @db.Date
+
+  mode String
+
+  chefUserId String? @db.Uuid
+
+  assistantUserId String? @db.Uuid
+
+  dishwasherUserId String? @db.Uuid
+
+  shopperUserId String? @db.Uuid
+
+  createdBy String @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  @@unique([kitchenId, assignmentDate])
+  @@index([kitchenId])
+}
+
+model PantryItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  name String
+
+  normalizedIngredientId String? @db.Uuid
+
+  quantity Float
+
+  unit String
+
+  weightGrams Float?
+
+  purchasedAt DateTime?
+
+  expiresAt DateTime?
+
+  storageLocation StorageLocation
+
+  createdBy String @db.Uuid
+
+  updatedBy String @db.Uuid
+
+  status String @default("AVAILABLE")
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([kitchenId, status, expiresAt])
+}
+
+model ShoppingItem {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  name String
+
+  quantity Float?
+
+  unit String?
+
+  category String?
+
+  checked Boolean @default(false)
+
+  assignedTo String? @db.Uuid
+
+  estimatedPrice Decimal? @db.Decimal(10, 2)
+
+  actualPrice Decimal? @db.Decimal(10, 2)
+
+  source String
+
+  relatedMealPlanId String? @db.Uuid
+
+  createdBy String @db.Uuid
+
+  checkedBy String? @db.Uuid
+
+  checkedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([kitchenId, checked])
+}
+
+model NutritionFood {
+  id String @id @default(uuid()) @db.Uuid
+
+  name String @unique
+
+  aliases String[]
+
+  caloriesPer100g Float
+
+  proteinPer100g Float
+
+  fatPer100g Float
+
+  carbsPer100g Float
+
+  source String
+
+  updatedAt DateTime @updatedAt
+}
+
+model AIConversation {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  userId String @db.Uuid
+
+  title String?
+
+  purpose String
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  messages AIMessage[]
+
+  @@index([kitchenId, userId])
+}
+
+model AIMessage {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  conversationId String @db.Uuid
+
+  role String
+
+  content Json
+
+  createdAt DateTime @default(now())
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([kitchenId, conversationId])
+}
+
+model KitchenStory {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  dishId String? @db.Uuid
+
+  title String
+
+  content String
+
+  storyDate DateTime @db.Date
+
+  coverImageUrl String?
+
+  imageUrls String[]
+
+  createdBy String @db.Uuid
+
+  storyType String
+
+  isPinned Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  @@index([kitchenId, deletedAt, storyDate])
+}
+
+model AchievementDefinition {
+  id String @id @default(uuid()) @db.Uuid
+
+  code String @unique
+
+  name String
+
+  description String
+
+  criterion Json
+
+  createdAt DateTime @default(now())
+
+  kitchens KitchenAchievement[]
+}
+
+model KitchenAchievement {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  definitionId String @db.Uuid
+
+  unlockedAt DateTime
+
+  progress Int @default(0)
+
+  definition AchievementDefinition @relation(fields: [definitionId], references: [id])
+
+  @@unique([kitchenId, definitionId])
+  @@index([kitchenId])
+}
+
+model Anniversary {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  type String
+
+  name String
+
+  date DateTime @db.Date
+
+  repeatsYearly Boolean @default(true)
+
+  notes String?
+
+  createdBy String @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  @@index([kitchenId, date])
+}
+
+model LoveLetter {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  title String
+
+  encryptedContent String
+
+  keyVersion Int @default(1)
+
+  createdBy String @db.Uuid
+
+  recipientUserId String @db.Uuid
+
+  unlockType LetterUnlockType
+
+  unlockAt DateTime?
+
+  unlockDishCount Int?
+
+  unlockMealCount Int?
+
+  status String @default("LOCKED")
+
+  openedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  deletedAt DateTime?
+
+  @@index([kitchenId, recipientUserId, status])
+}
+
+model Notification {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  userId String @db.Uuid
+
+  type String
+
+  title String
+
+  content String
+
+  sourceEventId String? @db.Uuid
+
+  sourceKey String?
+
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([kitchenId, userId, readAt])
+  @@unique([userId, type, sourceKey])
+  @@index([sourceEventId])
+}
+
+model ConsumerReceipt {
+  id            String   @id @default(uuid()) @db.Uuid
+  outboxEventId String   @db.Uuid
+  consumer      String
+  processedAt   DateTime @default(now())
+
+  @@unique([outboxEventId, consumer])
+  @@index([consumer, processedAt])
+}
+
+enum UploadStorageDriver {
+  LOCAL
+  COS
+}
+
+enum UploadFileStatus {
+  ACTIVE
+  DELETED
+  ORPHANED
+}
+
+model UploadFile {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  storageKey String @unique
+
+  storageDriver UploadStorageDriver @default(LOCAL)
+
+  checksum String?
+
+  status UploadFileStatus @default(ACTIVE)
+
+  thumbnailKey String? @unique
+
+  mimeType String
+
+  sizeBytes Int
+
+  originalName String
+
+  createdBy String @db.Uuid
+
+  createdAt DateTime @default(now())
+
+  deletedAt DateTime?
+
+  @@index([kitchenId, deletedAt])
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String? @db.Uuid
+
+  userId String? @db.Uuid
+
+  action String
+
+  resourceType String
+
+  resourceId String? @db.Uuid
+
+  requestId String
+
+  ipHash String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  outboxEventId String? @unique @db.Uuid
+
+  @@index([kitchenId, createdAt])
+  @@index([userId, createdAt])
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  DEAD
+}
+
+model OutboxEvent {
+  id            String       @id @default(uuid()) @db.Uuid
+  kitchenId     String?      @db.Uuid
+  userId        String?      @db.Uuid
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  dedupeKey     String?      @unique
+  payload       Json
+  status        OutboxStatus @default(PENDING)
+  attempts      Int          @default(0)
+  availableAt   DateTime     @default(now())
+  processedAt   DateTime?
+  lastError     String?
+  createdAt     DateTime     @default(now())
+
+  @@index([status, availableAt, createdAt])
+  @@index([kitchenId, createdAt])
+}
+
+model IdempotencyKey {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
+  operation   String
+  key         String
+  requestHash String
+  response    Json?
+  statusCode  Int?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, operation, key])
+  @@index([expiresAt])
+}

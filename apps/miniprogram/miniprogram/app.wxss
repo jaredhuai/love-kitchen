@@ -1,0 +1,138 @@
+page{background:#fff9f5;color:#4a3636;font-size:28rpx}.page{padding:32rpx}.card{background:#fff;border-radius:32rpx;padding:32rpx;margin-bottom:24rpx;box-shadow:0 12rpx 36rpx rgba(74,54,54,.08)}.primary{background:#f58ca8;color:#fff;border:0;border-radius:999rpx}.muted{color:#8c7474}.title{font-size:44rpx;font-weight:700}.ai{background:#a78bfa;color:#fff}.safe-bottom{padding-bottom:env(safe-area-inset-bottom)}
+page { background: #FFF9F5; color: #4A3636; font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif; }
+.card { background: #FFFFFF; border-radius: 28rpx; box-shadow: 0 8rpx 24rpx rgba(74,54,54,.06); padding: 28rpx; margin-bottom: 24rpx; }
+.section-title { font-size: 34rpx; font-weight: 600; color: #4A3636; }
+.muted { color: #8C7474; font-size: 26rpx; }
+.primary-btn { background: linear-gradient(135deg,#F58CA8,#FF6B6B); color:#fff; border-radius: 999rpx; }
+.empty { text-align:center; color:#8C7474; padding:80rpx 20rpx; }
+
+/* Romantic handwritten accents; controls and long body copy keep the system font. */
+.title,
+.section-title,
+.block-title,
+.memory-heading,
+.dish-name,
+.dish-title,
+.event-title,
+.history-title,
+.ai-title,
+.avatar,
+.couple-caption,
+.memory-note {
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", "FZKai-Z03", serif;
+  letter-spacing: .04em;
+}
+
+.title,
+.section-title,
+.dish-title,
+.event-title,
+.history-title {
+  font-weight: 600;
+}
+
+/* Button system B — warm hand-drawn outlines. */
+page button,
+page .history-toggle {
+  box-sizing: border-box;
+  min-height: 76rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 30rpx;
+  border: 3rpx solid #62463d;
+  border-radius: 22rpx;
+  background: #fffdf8;
+  color: #5a4038;
+  box-shadow: 5rpx 6rpx 0 #f1d9d2, inset 0 0 0 2rpx rgba(255,255,255,.9);
+  font-size: 27rpx;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+page button::after { border: 0; }
+
+page button:active,
+page .history-toggle:active {
+  transform: translate(3rpx, 3rpx) rotate(-.4deg);
+  box-shadow: 2rpx 2rpx 0 #f1d9d2, inset 0 0 0 2rpx rgba(255,255,255,.9);
+}
+
+page button.primary,
+page button.primary-btn,
+page button.complete,
+page button.ask-btn {
+  border-color: #62463d;
+  background: #f8c6d2;
+  color: #5a4038;
+  box-shadow: 5rpx 6rpx 0 #e8b5c1, inset 0 0 0 2rpx rgba(255,255,255,.72);
+}
+
+page button.small-btn,
+page button[size="mini"] {
+  min-height: 64rpx;
+  padding: 0 24rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+page button.danger,
+page button[type="warn"] {
+  border-color: #75443d;
+  background: #ff9f96;
+  color: #63352f;
+  box-shadow: 5rpx 6rpx 0 #efc4bd, inset 0 0 0 2rpx rgba(255,255,255,.65);
+}
+
+page button.cancel,
+page button.outline {
+  background: #f4efff;
+  color: #654f74;
+  box-shadow: 5rpx 6rpx 0 #ded5ec, inset 0 0 0 2rpx rgba(255,255,255,.85);
+}
+
+page button[disabled] {
+  opacity: .48;
+  color: #8c7474;
+  background: #f4eeea;
+  box-shadow: 3rpx 3rpx 0 #e5d9d4;
+}
+
+.btn-heart {
+  margin-right: 14rpx;
+  color: #e77896;
+  font-family: serif;
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+.btn-flourish {
+  margin-left: 12rpx;
+  align-self: flex-start;
+  color: #7b5549;
+  font-family: serif;
+  font-size: 25rpx;
+  line-height: 1;
+  transform: rotate(14deg);
+}
+
+.hand-button {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #62463d;
+  border-radius: 22rpx;
+  background: #fffdf8;
+  color: #5a4038;
+  box-shadow: 5rpx 6rpx 0 #f1d9d2, inset 0 0 0 2rpx rgba(255,255,255,.9);
+  font-weight: 600;
+  text-align: center;
+}
+
+.hand-button:active {
+  transform: translate(3rpx, 3rpx) rotate(-.4deg);
+  box-shadow: 2rpx 2rpx 0 #f1d9d2;
+}

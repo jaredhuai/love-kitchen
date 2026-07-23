@@ -1,0 +1,1 @@
+<view class="page"><view class="title">我们的资料</view><view class="card muted">口味与营养设置仅用于本厨房推荐</view><button bindtap="account">账号、隐私与数据</button></view>

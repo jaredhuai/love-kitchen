@@ -1,0 +1,27 @@
+.page{padding:32rpx}
+.title{margin:32rpx 0 8rpx;font-size:42rpx;font-weight:700}
+.subtitle{margin-bottom:28rpx;color:#9a8585;font-size:24rpx}
+.review-card,.history-card{margin-bottom:22rpx;padding:22rpx;border-radius:28rpx;background:#fff;box-shadow:0 10rpx 28rpx rgba(94,58,58,.08)}
+.dish-info{display:flex;align-items:center;gap:20rpx}
+.dish-image{width:132rpx;height:132rpx;flex:none;border-radius:22rpx;background:#f4d2da}
+.history-image{width:104rpx;height:104rpx;flex:none;border-radius:20rpx;background:#f4d2da}
+.placeholder{display:flex;align-items:center;justify-content:center;color:#fff;font-size:38rpx}
+.dish-copy,.history-copy{min-width:0;flex:1}
+.dish-name{display:block;font-size:30rpx;font-weight:700;color:#543f3f}
+.meal-label{display:block;margin-top:10rpx;color:#9a8585;font-size:22rpx;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rating-row{display:flex;align-items:center;justify-content:space-between;margin-top:20rpx;padding-top:18rpx;border-top:1rpx solid #f7e5e7}
+.rating-label{color:#8c7474;font-size:22rpx}
+.stars{display:flex;gap:8rpx}
+.star{color:#e6d9d5;font-size:48rpx;line-height:1}
+.star.active{color:#f5b642}
+.review-text{margin-top:16rpx;padding:18rpx 20rpx;border-radius:18rpx;background:#fff9f5;color:#7c6257;font-size:24rpx;line-height:1.6}
+.history-head{display:flex;align-items:center;justify-content:space-between;gap:20rpx;margin:42rpx 0 22rpx}
+.history-title{font-size:34rpx;font-weight:700;color:#543f3f}
+.history-toggle{min-width:240rpx;height:72rpx;padding:0 24rpx;display:flex;align-items:center;justify-content:center;border-radius:22rpx;background:#fffdf8;color:#5a4038;font-size:23rpx;box-sizing:border-box}
+.history-meta{display:block;margin-top:8rpx;color:#9a8585;font-size:22rpx}
+.history-stars{display:flex;gap:5rpx;margin-top:16rpx}
+.history-star{color:#e6d9d5;font-size:32rpx;line-height:1}
+.history-star.active{color:#f5b642}
+.state{text-align:center;color:#8c7474;padding:100rpx 30rpx;line-height:1.7}
+.state.compact{padding:48rpx 30rpx}
+.state button{margin-top:24rpx}

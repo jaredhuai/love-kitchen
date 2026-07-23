@@ -1,0 +1,4 @@
+import {createCipheriv,createDecipheriv,createHash,randomBytes} from 'node:crypto';
+const key=(secret:string)=>createHash('sha256').update(secret).digest();
+export function encryptLetter(text:string,secret:string){const iv=randomBytes(12);const cipher=createCipheriv('aes-256-gcm',key(secret),iv);const body=Buffer.concat([cipher.update(text,'utf8'),cipher.final()]);return [iv,cipher.getAuthTag(),body].map(v=>v.toString('base64url')).join('.');}
+export function decryptLetter(value:string,secret:string){const parts=value.split('.');if(parts.length!==3)throw new Error('密文格式无效');const [iv,tag,body]=parts.map(v=>Buffer.from(v!,'base64url'));const decipher=createDecipheriv('aes-256-gcm',key(secret),iv!);decipher.setAuthTag(tag!);return Buffer.concat([decipher.update(body!),decipher.final()]).toString('utf8');}

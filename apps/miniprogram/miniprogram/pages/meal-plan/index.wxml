@@ -1,0 +1,35 @@
+<view class="page">
+  <view class="header"><view><text class="title">所有菜单</text><text class="subtitle">快快快，宝宝饿了！</text></view></view>
+  <view wx:if="{{loading}}" class="empty">正在加载…</view>
+  <view wx:if="{{error}}" class="empty"><text>{{error}}</text><button bindtap="load">重试</button></view>
+  <view wx:if="{{!loading && !error && !dishes.length}}" class="empty">菜品库还没有菜品。</view>
+  <view wx:if="{{!loading && !error && dishes.length}}" class="meal-grid">
+    <view wx:for="{{dishes}}" wx:key="id" class="meal-card">
+      <view class="image-wrap" data-id="{{item.id}}" bindtap="openDish">
+        <image wx:if="{{item.imageUrl}}" class="meal-image" src="{{item.imageUrl}}" mode="aspectFill" />
+        <view wx:else class="meal-image placeholder"><text>{{item.dishInitial}}</text></view>
+        <view class="image-shade"></view>
+        <text class="meal">{{item.name}}</text>
+      </view>
+      <view class="add-meal hand-button" data-id="{{item.id}}" catchtap="addToMeal"><text class="btn-heart">♡</text><text>{{adding ? '加入中…' : '加入餐次'}}</text><text class="btn-flourish">♡</text></view>
+    </view>
+  </view>
+  <view class="section-title future-title">未来餐单</view>
+  <view wx:if="{{!loading && !upcomingDays.length}}" class="future-empty">未来的日子我们也要好好吃饭呦</view>
+  <view wx:for="{{upcomingDays}}" wx:key="date" class="future-day">
+    <text class="future-date">{{item.label}}</text>
+    <view wx:for="{{item.items}}" wx:for-item="plan" wx:key="id" class="future-row"><view><text class="future-dish">{{plan.dishName}}</text><text class="future-meal">{{plan.mealLabel}} · {{plan.time}}</text></view><button size="mini" class="future-cancel danger" data-id="{{plan.id}}" bindtap="removeUpcoming">取消安排</button></view>
+  </view>
+
+  <view wx:if="{{scheduling}}" class="schedule-mask" bindtap="closeSchedule">
+    <view class="schedule-dialog" catchtap="stopPropagation">
+      <view class="schedule-head"><view><text class="schedule-eyebrow">安排未来餐次</text><text class="schedule-dish">{{selectedDishName}}</text></view><view class="schedule-close hand-button" bindtap="closeSchedule">×</view></view>
+      <text class="schedule-label">选择日期</text>
+      <view class="date-quick"><view class="date-choice hand-button {{selectedDate === minDate ? 'selected' : ''}}" bindtap="chooseToday"><text class="btn-heart">♡</text>今天</view><view class="date-choice hand-button {{selectedDate === tomorrowDate ? 'selected' : ''}}" bindtap="chooseTomorrow"><text class="btn-heart">♡</text>明天</view></view>
+      <picker mode="date" value="{{selectedDate}}" start="{{minDate}}" end="{{maxDate}}" bindchange="onDateChange"><view class="date-picker hand-button"><text class="btn-heart">♡</text><text>{{selectedDate}}</text><text class="btn-flourish">♡</text></view></picker>
+      <text class="schedule-label">选择餐次</text>
+      <view class="meal-options"><view wx:for="{{mealOptions}}" wx:key="type" class="meal-choice hand-button {{selectedMealType === item.type ? 'selected' : ''}}" data-type="{{item.type}}" bindtap="chooseMeal">{{item.label}}</view></view>
+      <view class="schedule-actions"><button class="schedule-cancel" bindtap="closeSchedule">暂时不安排</button><button class="primary-btn schedule-confirm" loading="{{adding}}" disabled="{{adding}}" bindtap="confirmSchedule"><text class="btn-heart">♡</text><text>确认安排</text><text class="btn-flourish">♡</text></button></view>
+    </view>
+  </view>
+</view>

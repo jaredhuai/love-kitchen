@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.env
+dist
+coverage
+uploads
+.codex-artifacts
+!apps/api/src/modules/uploads/
+!apps/api/src/modules/uploads/**
+*.log
+.DS_Store
+apps/api/prisma/*.db
+apps/miniprogram/project.private.config.json
+HANDOFF.md

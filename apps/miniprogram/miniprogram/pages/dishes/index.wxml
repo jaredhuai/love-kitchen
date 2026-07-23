@@ -1,0 +1,27 @@
+<view class="page">
+  <view class="title">今日菜品评价</view><view class="subtitle">咸了还是甜了这是一个问题？</view>
+  <view wx:if="{{loading}}" class="state">正在加载…</view>
+  <view wx:if="{{error}}" class="state"><text>{{error}}</text><button bindtap="load">重试</button></view>
+  <view wx:if="{{!loading && !error && !completed.length}}" class="state">今天还没有完成的菜品，完成餐次后就可以来评分。</view>
+  <view wx:for="{{completed}}" wx:key="logId" class="review-card">
+    <view class="dish-info" data-id="{{item.dishId}}" bindtap="openDish">
+      <image wx:if="{{item.imageUrl}}" class="dish-image" src="{{item.imageUrl}}" mode="aspectFill"/><view wx:else class="dish-image placeholder">菜</view>
+      <view class="dish-copy"><text class="dish-name">{{item.name}}</text><text class="meal-label">{{item.mealLabel}} · {{item.description}}</text></view>
+    </view>
+    <view class="rating-row"><text class="rating-label">{{item.rating ? '我的评分' : '点击星星评分'}}</text><view class="stars"><text wx:for="{{item.stars}}" wx:for-item="star" wx:key="value" class="star {{star.active ? 'active' : ''}}" data-dish-id="{{item.dishId}}" data-rating="{{star.value}}" catchtap="rate">★</text></view></view>
+    <view wx:if="{{item.reviewText}}" class="review-text">“{{item.reviewText}}”</view>
+  </view>
+  <view class="history-head">
+    <text class="history-title">历史评价</text>
+    <view class="history-toggle hand-button" bindtap="toggleHistory"><text class="btn-heart">♡</text><text>{{showHistory ? '收起历史评价' : '查看历史评价'}}</text><text class="btn-flourish">♡</text></view>
+  </view>
+  <view wx:if="{{showHistory && !historyReviews.length}}" class="state compact">还没有历史评价。</view>
+  <view wx:if="{{showHistory}}" wx:for="{{historyReviews}}" wx:key="id" class="history-card">
+    <view class="dish-info" data-id="{{item.dishId}}" bindtap="openDish">
+      <image wx:if="{{item.imageUrl}}" class="history-image" src="{{item.imageUrl}}" mode="aspectFill"/><view wx:else class="history-image placeholder">菜</view>
+      <view class="history-copy"><text class="dish-name">{{item.dishName}}</text><text class="history-meta">{{item.reviewerLabel}} · {{item.displayDate}}</text></view>
+    </view>
+    <view class="history-stars"><text wx:for="{{item.stars}}" wx:for-item="star" wx:key="value" class="history-star {{star.active ? 'active' : ''}}">★</text></view>
+    <view class="review-text">“{{item.content}}”</view>
+  </view>
+</view>

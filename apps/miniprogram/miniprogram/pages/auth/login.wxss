@@ -1,0 +1,1 @@
+.card{margin-top:25vh}.muted{margin:24rpx 0 48rpx}.agreement-group{margin:38rpx 0}.agreement{min-height:88rpx;display:flex;align-items:center;gap:18rpx;padding:12rpx 4rpx;font-size:30rpx;line-height:1.45;color:#4a3636}.agreement checkbox{transform:scale(1.2);transform-origin:center}

@@ -1,0 +1,20 @@
+<view class="page">
+  <view class="top"><view><text class="title">德德与桐桐厨房</text><text class="muted">和你做饭的日子就是幸福的时刻</text></view></view>
+  <view class="couple-card card"><view class="avatar">德德</view><text class="couple-heart">♡</text><view class="avatar partner">桐桐</view><text class="couple-caption">一起经营每一天</text></view>
+  <view class="ai-card" bindtap="openAI"><image class="feature-icon" src="/assets/icons-c/ai-chef.png" mode="aspectFit"/><view class="ai-copy"><text class="ai-title">AI 厨师推荐 <text class="new-badge">New</text></text><text class="muted">为你们推荐最合适的晚餐</text></view><text class="ai-arrow">去看看 →</text></view>
+  <view class="section-title block-title">今日菜单</view>
+  <view class="today-list">
+    <view wx:for="{{mealSections}}" wx:key="type" class="meal-box">
+      <view class="meal-head"><text>{{item.label}}</text><text>{{item.items.length}}道</text></view>
+      <view wx:if="{{!item.items.length}}" class="not-arranged">还没安排</view>
+      <view wx:for="{{item.items}}" wx:key="id" class="dish-row">
+        <view class="dish-main" data-id="{{item.dishId}}" bindtap="openDish">
+          <image wx:if="{{item.imageUrl}}" class="dish-thumb" src="{{item.imageUrl}}" mode="aspectFill"/><view wx:else class="dish-thumb dish-placeholder">菜</view>
+          <view><text class="dish-name">{{item.name}}</text></view>
+        </view>
+        <view class="dish-actions"><button class="meal-action complete" data-id="{{item.id}}" catchtap="complete">完成</button><button class="meal-action cancel" data-id="{{item.id}}" catchtap="cancel">取消</button></view>
+      </view>
+    </view>
+  </view>
+  <view class="section-title memory-heading"><image class="heading-icon" src="/assets/icons-c/story.png" mode="aspectFit"/>今日的温暖记录</view><view class="memory-wrap"><view class="memory-note" bindtap="editMemory">{{memoryText}}<text class="note-heart">♡</text></view><view class="photo-placeholder" bindtap="chooseMemoryImage"><image wx:if="{{memoryImage}}" class="memory-photo" src="{{memoryImage}}" mode="aspectFit"/><view wx:else class="upload-empty"><image src="/assets/icons-c/upload.png" mode="aspectFit"/><text>添加照片</text></view></view></view>
+</view>

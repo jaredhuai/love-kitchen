@@ -1,0 +1,1 @@
+{"extends":"../../tsconfig.base.json","compilerOptions":{"module":"commonjs","target":"ES2022","outDir":"dist","sourceMap":true,"experimentalDecorators":true,"emitDecoratorMetadata":true,"strictPropertyInitialization":false},"include":["src","prisma","test"]}

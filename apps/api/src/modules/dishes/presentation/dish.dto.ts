@@ -1,0 +1,7 @@
+import { Type } from 'class-transformer';
+import { IsBoolean, IsInt, IsOptional, IsString, Length, Max, Min } from 'class-validator';
+export class DishDto { @IsString() @Length(1, 100) name!: string; @IsOptional() @IsString() @Length(0, 1000) description?: string; @IsOptional() @IsString() category?: string; @IsOptional() @IsString() cuisine?: string; @IsOptional() @IsInt() @Min(1) @Max(24) servings?: number; @IsOptional() @IsString() coverImageUrl?: string; @IsOptional() @IsBoolean() isFavorite?: boolean; }
+export class UpdateDishDto { @IsOptional() @IsString() @Length(1, 100) name?: string; @IsOptional() @IsString() @Length(0, 1000) description?: string; @IsOptional() @IsString() category?: string; @IsOptional() @IsString() cuisine?: string; @IsOptional() @IsInt() @Min(1) @Max(24) servings?: number; @IsOptional() @IsString() coverImageUrl?: string; @IsOptional() @IsBoolean() isFavorite?: boolean; }
+export class ReviewDto { @IsInt() @Min(1) @Max(5) tasteRating!: number; @IsInt() @Min(1) @Max(5) appearanceRating!: number; @IsInt() @Min(1) @Max(5) careRating!: number; @IsOptional() @IsString() @Length(0, 500) content?: string; @IsOptional() @IsBoolean() eatAgain?: boolean; }
+export class DishPageQueryDto { @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1; @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) pageSize = 20; }
+export class DishCursorQueryDto { @IsOptional() @IsString() cursor?: string; @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit = 20; }

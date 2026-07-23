@@ -1,0 +1,1 @@
+<view class="add-page" bindtap="onTap"><view class="plus">＋</view><text>从现有菜品中安排一餐</text></view>

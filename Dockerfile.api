@@ -1,0 +1,30 @@
+FROM node:20-bookworm-slim
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+RUN corepack enable \
+  && corepack prepare pnpm@9.15.4 --activate \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/api-contracts/package.json packages/api-contracts/package.json
+COPY packages/shared-types/package.json packages/shared-types/package.json
+COPY packages/validation/package.json packages/validation/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/api apps/api
+COPY packages packages
+
+RUN pnpm --filter @love-kitchen/api prisma:generate \
+  && pnpm --filter @love-kitchen/api build
+
+WORKDIR /app/apps/api
+
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/src/main.js"]

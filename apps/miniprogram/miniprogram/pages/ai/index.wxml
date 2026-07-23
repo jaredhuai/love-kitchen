@@ -1,0 +1,40 @@
+<view class="page safe-bottom">
+  <view class="hero">
+    <text class="eyebrow">千问 AI 厨师</text>
+    <text class="title">今天想和你吃点什么？</text>
+    <text class="muted">告诉我口味、时间或家里的食材</text>
+  </view>
+
+  <view class="card request-card">
+    <textarea class="request-input" placeholder="例如：30 分钟内，清淡一点" value="{{requestText}}" bindinput="onInput" maxlength="1000" disabled="{{loading}}"/>
+    <view class="quick-list">
+      <text wx:for="{{quickRequests}}" wx:key="*this" class="quick-item" data-text="{{item}}" bindtap="chooseQuickRequest">{{item}}</text>
+    </view>
+    <view class="request-footer">
+      <picker mode="selector" range="{{[1,2,3,4,5,6]}}" value="{{servings - 1}}" bindchange="changeServings">
+        <view class="servings">🍽 {{servings}} 人份</view>
+      </picker>
+      <button class="primary-btn ask-btn" loading="{{loading}}" disabled="{{loading}}" bindtap="ask"><text class="btn-heart">♡</text><text>{{loading ? '千问正在思考…' : '开始推荐'}}</text><text class="btn-flourish">♡</text></button>
+    </view>
+  </view>
+
+  <view wx:if="{{error}}" class="card error-card">
+    <text class="error-title">这次没想出来</text>
+    <text>{{error}}</text>
+    <text class="retry" bindtap="ask">再试一次</text>
+  </view>
+
+  <view wx:if="{{recommendations.length}}" class="results">
+    <text class="section-title">千问为你们推荐</text>
+    <view wx:for="{{recommendations}}" wx:key="name" class="card recommendation-card">
+      <view class="recommendation-number">{{index + 1}}</view>
+      <view class="recommendation-content">
+        <text class="dish-name">{{item.name}}</text>
+        <text class="reason">{{item.reason}}</text>
+        <view wx:if="{{item.ingredients.length}}" class="ingredients">
+          <text wx:for="{{item.ingredients}}" wx:for-item="ingredient" wx:key="*this" class="ingredient">{{ingredient}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,9 @@
+<view class="page">
+  <view class="title">开启我们的厨房</view>
+  <view class="card">
+    <view class="muted">给你们的厨房起个名字</view>
+    <input value="{{name}}" maxlength="80" bindinput="onNameInput" placeholder="两个人的厨房" />
+    <button class="primary" loading="{{loading}}" disabled="{{loading}}" bindtap="create">创建并进入厨房</button>
+  </view>
+  <view class="card muted">已有邀请码？加入对方厨房的功能稍后开放。</view>
+</view>
