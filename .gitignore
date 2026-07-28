@@ -12,3 +12,4 @@ uploads
 apps/api/prisma/*.db
 apps/miniprogram/project.private.config.json
 HANDOFF.md
+docs
