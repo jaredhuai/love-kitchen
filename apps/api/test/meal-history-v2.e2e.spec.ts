@@ -55,11 +55,26 @@ describe('Meal History API v1 compatibility and v2 contract', () => {
     expect(await prisma.outboxEvent.count({ where: { kitchenId: KITCHEN, aggregateType: 'MealLog', aggregateId: first.body.data.id } })).toBe(1);
     expect((await request(app.getHttpServer()).post(url).set('Authorization', `Bearer ${token}`).set('Idempotency-Key', 'meal-history-stable-0001').send({ ...body, servings: 3 }).expect(409)).body.error.code).toBe('IDEMPOTENCY_CONFLICT');
   });
+  it('stores an immutable dish snapshot when completing a meal', async () => {
+    const dish = await prisma.dish.create({
+      data: { kitchenId: KITCHEN, createdBy: USER, name: '快照火锅', notes: '当天加辣', category: 'OTHER', kind: 'TEMPORARY', effectiveDate: new Date('2026-08-18'), tags: [] },
+    });
+    const response = await request(app.getHttpServer())
+      .post(`/api/v2/kitchens/${KITCHEN}/meal-history`)
+      .set('Authorization', `Bearer ${token}`)
+      .set('Idempotency-Key', 'v3-snapshot-0001')
+      .send({ eatenAt: '2026-08-18T12:00:00.000Z', mealType: 'DINNER', servings: 2, dishId: dish.id })
+      .expect(201);
+    const saved = await prisma.mealLog.findUniqueOrThrow({ where: { id: response.body.data.id } });
+    expect(saved.dishSnapshot).toMatchObject({ name: '快照火锅', notes: '当天加辣', kind: 'TEMPORARY' });
+    await prisma.dish.update({ where: { id: dish.id }, data: { name: '后来改名' } });
+    expect((await prisma.mealLog.findUniqueOrThrow({ where: { id: saved.id } })).dishSnapshot).toMatchObject({ name: '快照火锅' });
+  });
 
   function get(prefix: string, query = '') { return request(app.getHttpServer()).get(`${prefix}/kitchens/${KITCHEN}/meal-history${query}`).set('Authorization', `Bearer ${token}`); }
 });
 
 async function cleanup(prisma: PrismaClient) {
-  await prisma.idempotencyKey.deleteMany({ where: { userId: USER } }); await prisma.outboxEvent.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.mealLog.deleteMany({ where: { kitchenId: KITCHEN } });
+  await prisma.idempotencyKey.deleteMany({ where: { userId: USER } }); await prisma.outboxEvent.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.mealLog.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.dish.deleteMany({ where: { kitchenId: KITCHEN } });
   await prisma.kitchenMember.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.kitchen.deleteMany({ where: { id: KITCHEN } }); await prisma.refreshToken.deleteMany({ where: { userId: USER } }); await prisma.user.deleteMany({ where: { id: USER } });
 }

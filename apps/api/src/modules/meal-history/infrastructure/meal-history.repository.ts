@@ -28,10 +28,32 @@ export class MealHistoryRepository {
 
   async createInTransaction(tx: Prisma.TransactionClient, kitchenId: string, userId: string, dto: MealLogInput) {
     if (dto.mealPlanId) await this.resources.requireMealPlan(tx, kitchenId, dto.mealPlanId);
-    if (dto.dishId) await this.resources.requireDish(tx, kitchenId, dto.dishId);
+    const dish = dto.dishId
+      ? await tx.dish.findFirst({
+          where: { id: dto.dishId, kitchenId, deletedAt: null, status: 'ACTIVE' },
+          include: {
+            images: { orderBy: { sortOrder: 'asc' } },
+            ingredients: { orderBy: { sortOrder: 'asc' } },
+            steps: { orderBy: { stepNo: 'asc' } },
+          },
+        })
+      : null;
+    if (dto.dishId && !dish) await this.resources.requireDish(tx, kitchenId, dto.dishId);
     const eaterUserIds = dto.eaterUserIds?.length ? [...new Set(dto.eaterUserIds)] : [userId];
     await this.resources.requireActiveMembers(tx, kitchenId, [...eaterUserIds, dto.cookedBy]);
-    const log = await tx.mealLog.create({ data: { kitchenId, createdBy: userId, mealPlanId: dto.mealPlanId ?? null, eatenAt: new Date(dto.eatenAt), mealType: dto.mealType, dishId: dto.dishId ?? null, servings: dto.servings, eaterUserIds, cookedBy: dto.cookedBy ?? null, wasPlanned: !!dto.mealPlanId, imageUrls: [] } });
+    const dishSnapshot = dish
+      ? {
+          name: dish.name,
+          description: dish.description,
+          notes: dish.notes,
+          category: dish.category,
+          kind: dish.kind,
+          imageUploadIds: dish.images.map((image) => image.uploadId),
+          ingredients: dish.ingredients,
+          steps: dish.steps,
+        }
+      : undefined;
+    const log = await tx.mealLog.create({ data: { kitchenId, createdBy: userId, mealPlanId: dto.mealPlanId ?? null, eatenAt: new Date(dto.eatenAt), mealType: dto.mealType, dishId: dto.dishId ?? null, servings: dto.servings, eaterUserIds, cookedBy: dto.cookedBy ?? null, wasPlanned: !!dto.mealPlanId, imageUrls: dish?.images.map((image) => image.uploadId) ?? [], ...(dishSnapshot ? { dishSnapshot } : {}) } });
     await enqueueAudit(tx, { kitchenId, userId, aggregateType: 'MealLog', aggregateId: log.id, eventType: 'MEAL_LOG_CREATED', resourceId: log.id });
     return log;
   }

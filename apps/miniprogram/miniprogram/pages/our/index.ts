@@ -6,30 +6,56 @@ type Dish = {
   id: string;
   name: string;
   description?: string | null;
+  notes?: string | null;
   category?: string | null;
+  kind?: 'PERMANENT' | 'TEMPORARY';
+  effectiveDate?: string | null;
   servings?: number | null;
   coverImageUrl?: string | null;
+  images?: Array<{ id: string; uploadId: string; sortOrder: number; isCover: boolean }>;
 };
-type ManagedDish = Dish & { imageUrl: string; displayDescription: string; addedBy: string; ingredientsText: string; stepsText: string };
+type FormImage = { uploadId: string; imageUrl: string };
+type ManagedDish = Dish & { imageUrl: string; imageItems: FormImage[]; displayDescription: string; addedBy: string; ingredientsText: string; stepsText: string };
 type Story = { id: string; title: string; content: string; storyDate: string; displayDate: string };
 type FormData = {
   dishId: string;
   name: string;
   description: string;
+  notes: string;
   ingredientsText: string;
   stepsText: string;
   category: string;
+  kind: 'PERMANENT' | 'TEMPORARY';
+  effectiveDate: string;
+  temporaryMealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
   servings: number;
-  coverImageUrl: string;
-  imageUrl: string;
+  images: FormImage[];
+  legacyCoverImageUrl: string;
+  imagesTouched: boolean;
 };
 
 const operators = [
   { code: '德德', label: '德德' },
   { code: '桐桐', label: '桐桐' },
 ];
-const categoryOptions = ['热菜', '凉菜', '汤羹', '主食', '小吃', '家常菜', '泡酱腌菜', '西餐', '烘焙', '烤箱菜', '饮品', '零食', '火锅', '海鲜', '自制食材'];
-const emptyForm: FormData = { dishId: '', name: '', description: '', ingredientsText: '', stepsText: '', category: '家常菜', servings: 2, coverImageUrl: '', imageUrl: '' };
+const categoryOptions = [
+  { code: 'MEAT', label: '荤菜' },
+  { code: 'VEGETABLE', label: '素菜' },
+  { code: 'SOUP_PORRIDGE', label: '汤羹粥' },
+  { code: 'DESSERT_SNACK', label: '甜品零食' },
+  { code: 'WESTERN', label: '西餐' },
+  { code: 'SEAFOOD', label: '海鲜' },
+  { code: 'DRINK', label: '饮品' },
+  { code: 'STAPLE', label: '主食' },
+  { code: 'OTHER', label: '其他' },
+];
+const mealTypeOptions = [
+  { code: 'BREAKFAST', label: '早餐' },
+  { code: 'LUNCH', label: '午餐' },
+  { code: 'DINNER', label: '晚餐' },
+  { code: 'SNACK', label: '夜宵' },
+];
+const emptyForm = (): FormData => ({ dishId: '', name: '', description: '', notes: '', ingredientsText: '', stepsText: '', category: 'OTHER', kind: 'PERMANENT', effectiveDate: dateValue(new Date()), temporaryMealType: 'DINNER', servings: 2, images: [], legacyCoverImageUrl: '', imagesTouched: false });
 const metaMarker = '【菜品详情】';
 const legacyAddedByPattern = /(?:^|\n)添加人：([^\n]+)\s*$/;
 
@@ -39,12 +65,16 @@ Page({
     dishes: [] as ManagedDish[],
     operators,
     categoryOptions,
+    mealTypeOptions,
     operatorIndex: 0,
-    categoryIndex: categoryOptions.indexOf(emptyForm.category),
-    form: emptyForm,
+    categoryIndex: categoryOptions.findIndex((item) => item.code === 'OTHER'),
+    mealTypeIndex: 2,
+    form: emptyForm(),
+    addMenuOpen: false,
     editing: false,
     loading: false,
     dishesLoading: false,
+    dishesExpanded: false,
     savingDish: false,
     uploadProgress: 0,
     error: '',
@@ -67,18 +97,23 @@ Page({
       this.setData({ loading: false, dishesLoading: false });
     }
   },
+  toggleDishes() { this.setData({ dishesExpanded: !this.data.dishesExpanded }); },
   onOperatorChange(event: WechatMiniprogram.PickerChange) { this.setData({ operatorIndex: Number(event.detail.value) }); },
   onCategoryChange(event: WechatMiniprogram.PickerChange) {
     const categoryIndex = Number(event.detail.value);
-    this.setData({ categoryIndex, 'form.category': categoryOptions[categoryIndex] || emptyForm.category });
+    this.setData({ categoryIndex, 'form.category': categoryOptions[categoryIndex]?.code || 'OTHER' });
   },
-  startAddDish() { this.setData({ editing: true, form: { ...emptyForm }, categoryIndex: categoryOptions.indexOf(emptyForm.category), uploadProgress: 0, dishError: '' }); },
+  toggleAddMenu() { this.setData({ addMenuOpen: !this.data.addMenuOpen }); },
+  startAddDish(event: WechatMiniprogram.TouchEvent) {
+    const kind = event.currentTarget.dataset.kind === 'TEMPORARY' ? 'TEMPORARY' : 'PERMANENT';
+    this.setData({ editing: true, addMenuOpen: false, form: { ...emptyForm(), kind }, categoryIndex: categoryOptions.findIndex((item) => item.code === 'OTHER'), mealTypeIndex: 2, uploadProgress: 0, dishError: '' });
+  },
   editDish(event: WechatMiniprogram.TouchEvent) {
     const dish = this.data.dishes.find((candidate) => candidate.id === event.currentTarget.dataset.id);
     if (!dish) return;
     const operatorIndex = Math.max(0, operators.findIndex((operator) => operator.code === dish.addedBy));
-    const category = dish.category || emptyForm.category;
-    const categoryIndex = Math.max(0, categoryOptions.indexOf(category));
+    const category = dish.category || 'OTHER';
+    const categoryIndex = Math.max(0, categoryOptions.findIndex((item) => item.code === category));
     this.setData({
       editing: true,
       operatorIndex,
@@ -89,41 +124,77 @@ Page({
         dishId: dish.id,
         name: dish.name,
         description: dish.displayDescription,
+        notes: dish.notes || '',
         ingredientsText: dish.ingredientsText,
         stepsText: dish.stepsText,
         category,
+        kind: dish.kind || 'PERMANENT',
+        effectiveDate: dish.effectiveDate?.slice(0, 10) || dateValue(new Date()),
+        temporaryMealType: 'DINNER',
         servings: dish.servings || 2,
-        coverImageUrl: dish.coverImageUrl || '',
-        imageUrl: dish.imageUrl,
+        images: dish.imageItems,
+        legacyCoverImageUrl: dish.coverImageUrl || '',
+        imagesTouched: false,
       },
     });
   },
-  cancelEditDish() { this.setData({ editing: false, form: { ...emptyForm }, uploadProgress: 0, dishError: '' }); },
+  cancelEditDish() { this.setData({ editing: false, form: emptyForm(), uploadProgress: 0, dishError: '' }); },
   onDishName(event: WechatMiniprogram.Input) { this.setData({ 'form.name': event.detail.value }); },
   onDishDescription(event: WechatMiniprogram.Input) { this.setData({ 'form.description': event.detail.value }); },
+  onDishNotes(event: WechatMiniprogram.Input) { this.setData({ 'form.notes': event.detail.value }); },
   onDishIngredients(event: WechatMiniprogram.Input) { this.setData({ 'form.ingredientsText': event.detail.value }); },
   onDishSteps(event: WechatMiniprogram.Input) { this.setData({ 'form.stepsText': event.detail.value }); },
   onDishServings(event: WechatMiniprogram.Input) { this.setData({ 'form.servings': Math.max(1, Math.min(24, Number(event.detail.value) || 2)) }); },
-  chooseDishImage() {
+  onEffectiveDateChange(event: WechatMiniprogram.PickerChange) { this.setData({ 'form.effectiveDate': String(event.detail.value) }); },
+  onMealTypeChange(event: WechatMiniprogram.PickerChange) {
+    const mealTypeIndex = Number(event.detail.value);
+    this.setData({ mealTypeIndex, 'form.temporaryMealType': mealTypeOptions[mealTypeIndex]?.code || 'DINNER' });
+  },
+  chooseDishImages() {
     const kitchenId = getKitchenId();
     if (!kitchenId) return wx.showToast({ title: '请先进入厨房', icon: 'none' });
     wx.chooseMedia({
-      count: 1,
+      count: Math.max(1, 9 - this.data.form.images.length),
       mediaType: ['image'],
-      success: (result) => {
-        const file = result.tempFiles?.[0];
-        if (!file) return;
-        this.setData({ uploadProgress: 1, 'form.imageUrl': file.tempFilePath });
-        const transfer = uploadFile<{ id: string }>(`/kitchens/${kitchenId}/uploads`, file.tempFilePath);
-        transfer.onProgress((uploadProgress) => this.setData({ uploadProgress }));
-        transfer.promise
-          .then((uploaded) => {
-            this.setData({ 'form.coverImageUrl': uploaded.id, uploadProgress: 100 });
-            wx.showToast({ title: '图片已上传', icon: 'success' });
-          })
-          .catch((error: unknown) => wx.showToast({ title: error instanceof Error ? error.message : '图片上传失败', icon: 'none' }));
+      success: async (result) => {
+        const files = result.tempFiles || [];
+        for (const file of files) {
+          try {
+            this.setData({ uploadProgress: 1 });
+            const transfer = uploadFile<{ id: string }>(`/kitchens/${kitchenId}/uploads`, file.tempFilePath);
+            transfer.onProgress((uploadProgress) => this.setData({ uploadProgress }));
+            const uploaded = await transfer.promise;
+            this.setData({ 'form.images': [...this.data.form.images, { uploadId: uploaded.id, imageUrl: file.tempFilePath }], 'form.imagesTouched': true, uploadProgress: 100 });
+          } catch (error) {
+            wx.showToast({ title: error instanceof Error ? error.message : '部分图片上传失败', icon: 'none' });
+          }
+        }
+        if (files.length) wx.showToast({ title: '图片上传完成', icon: 'success' });
       },
     });
+  },
+  previewDishImage(event: WechatMiniprogram.TouchEvent) {
+    const current = String(event.currentTarget.dataset.url || '');
+    wx.previewImage({ current, urls: this.data.form.images.map((image) => image.imageUrl) });
+  },
+  removeDishImage(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    this.setData({ 'form.images': this.data.form.images.filter((_image, imageIndex) => imageIndex !== index), 'form.imagesTouched': true });
+  },
+  makeCover(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    const images = [...this.data.form.images];
+    const selected = images.splice(index, 1)[0];
+    if (selected) this.setData({ 'form.images': [selected, ...images], 'form.imagesTouched': true });
+  },
+  moveImage(event: WechatMiniprogram.TouchEvent) {
+    const index = Number(event.currentTarget.dataset.index);
+    const direction = Number(event.currentTarget.dataset.direction);
+    const target = index + direction;
+    if (target < 0 || target >= this.data.form.images.length) return;
+    const images = [...this.data.form.images];
+    [images[index], images[target]] = [images[target]!, images[index]!];
+    this.setData({ 'form.images': images, 'form.imagesTouched': true });
   },
   async saveDish() {
     const kitchenId = getKitchenId();
@@ -139,13 +210,17 @@ Page({
         data: {
           name: form.name.trim(),
           description: withDishMeta(form.description.trim(), operator, form.ingredientsText.trim(), form.stepsText.trim()),
-          category: form.category || emptyForm.category,
+          notes: form.notes.trim(),
+          category: form.category,
+          kind: form.kind,
+          ...(form.kind === 'TEMPORARY' ? { effectiveDate: form.effectiveDate, temporaryMealType: form.temporaryMealType } : {}),
           servings: form.servings,
-          coverImageUrl: form.coverImageUrl || undefined,
+          ...(!form.dishId || form.imagesTouched ? { imageUploadIds: form.images.map((image) => image.uploadId) } : {}),
+          coverImageUrl: form.images.length ? form.images[0]?.uploadId : form.legacyCoverImageUrl || undefined,
         },
       });
       wx.showToast({ title: form.dishId ? '菜品已更新' : '菜品已添加', icon: 'success' });
-      this.setData({ editing: false, form: { ...emptyForm }, uploadProgress: 0 });
+      this.setData({ editing: false, form: emptyForm(), uploadProgress: 0 });
       await this.loadDishes();
     } catch (error) {
       this.setData({ dishError: error instanceof Error ? error.message : '菜品保存失败' });
@@ -249,7 +324,12 @@ function toDisplayStory(story: Story): Story {
 async function hydrateDishes(kitchenId: string, dishes: Dish[]): Promise<ManagedDish[]> {
   return Promise.all(dishes.map(async (dish) => {
     const parsed = parseDescription(dish.description);
-    return { ...dish, imageUrl: await resolveDishImage(kitchenId, dish.coverImageUrl), displayDescription: parsed.description, addedBy: parsed.addedBy, ingredientsText: parsed.ingredientsText, stepsText: parsed.stepsText };
+    const editableUploadIds = dish.images?.length
+      ? dish.images.map((image) => image.uploadId)
+      : dish.coverImageUrl?.match(/^[0-9a-f-]{36}$/i) ? [dish.coverImageUrl] : [];
+    const imageItems = await Promise.all(editableUploadIds
+      .map(async (uploadId) => ({ uploadId, imageUrl: await resolveDishImage(kitchenId, uploadId) })));
+    return { ...dish, imageUrl: imageItems[0]?.imageUrl || await resolveDishImage(kitchenId, dish.coverImageUrl), imageItems, displayDescription: parsed.description, addedBy: parsed.addedBy, ingredientsText: parsed.ingredientsText, stepsText: parsed.stepsText };
   }));
 }
 
@@ -300,4 +380,8 @@ async function resolveDishImage(kitchenId: string, reference?: string | null) {
   if (/^https?:\/\//i.test(reference)) return reference;
   try { return await downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`).promise; }
   catch { return ''; }
+}
+
+function dateValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }

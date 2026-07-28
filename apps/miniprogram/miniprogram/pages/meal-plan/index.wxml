@@ -3,8 +3,26 @@
   <view wx:if="{{loading}}" class="empty">正在加载…</view>
   <view wx:if="{{error}}" class="empty"><text>{{error}}</text><button bindtap="load">重试</button></view>
   <view wx:if="{{!loading && !error && !dishes.length}}" class="empty">菜品库还没有菜品。</view>
-  <view wx:if="{{!loading && !error && dishes.length}}" class="meal-grid">
-    <view wx:for="{{dishes}}" wx:key="id" class="meal-card">
+  <view wx:if="{{!loading && !error}}" class="category-grid">
+    <view
+      wx:for="{{categories}}"
+      wx:key="code"
+      class="category-card {{activeCategory === item.code ? 'active' : ''}}"
+      data-category="{{item.code}}"
+      bindtap="chooseCategory"
+    >
+      <image class="category-icon" src="{{item.icon}}" mode="aspectFill"/>
+      <text class="category-name">{{item.name}}</text>
+      <text class="category-count">{{item.count ? item.count + ' 道菜' : '暂无菜品'}}</text>
+    </view>
+  </view>
+  <view wx:if="{{activeCategory}}" class="category-section-head">
+    <view><text class="category-section-title">{{activeCategoryLabel}}</text><text class="category-section-count">共 {{visibleDishes.length}} 道菜</text></view>
+    <view class="category-back hand-button" bindtap="clearCategory">收起</view>
+  </view>
+  <view wx:if="{{activeCategory && !visibleDishes.length}}" class="category-empty">这个分类还没有菜品，期待第一道美味 ♡</view>
+  <view wx:if="{{activeCategory && visibleDishes.length}}" class="meal-grid">
+    <view wx:for="{{visibleDishes}}" wx:key="id" class="meal-card">
       <view class="image-wrap" data-id="{{item.id}}" bindtap="openDish">
         <image wx:if="{{item.imageUrl}}" class="meal-image" src="{{item.imageUrl}}" mode="aspectFill" />
         <view wx:else class="meal-image placeholder"><text>{{item.dishInitial}}</text></view>

@@ -50,9 +50,47 @@ describe('Dishes API v1 compatibility and v2 contract', () => {
     expect(replay.body.data.id).toBe(first.body.data.id); expect(await prisma.dish.count({ where: { kitchenId: KITCHEN, name: '幂等菜' } })).toBe(1);
     expect((await request(app.getHttpServer()).post(url).set('Authorization', `Bearer ${token}`).set('Idempotency-Key', 'stable-key-0001').send({ name: '不同菜' }).expect(409)).body.error.code).toBe('IDEMPOTENCY_CONFLICT');
   });
+  it('validates nine categories, persists ordered images and creates a temporary meal binding', async () => {
+    const uploads = await Promise.all([0, 1].map((index) => prisma.uploadFile.create({
+      data: {
+        kitchenId: KITCHEN,
+        storageKey: `${KITCHEN}/v3-${index}.webp`,
+        mimeType: 'image/webp',
+        sizeBytes: 10,
+        originalName: `v3-${index}.png`,
+        createdBy: USER,
+      },
+    })));
+    const permanent = await request(app.getHttpServer())
+      .post(`/api/v1/kitchens/${KITCHEN}/dishes`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: 'V3荤菜', category: 'MEAT', notes: '少盐', imageUploadIds: uploads.map((upload) => upload.id) })
+      .expect(201);
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/kitchens/${KITCHEN}/dishes/${permanent.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(detail.body.data).toMatchObject({ category: 'MEAT', notes: '少盐', ratingAverage: null, ratingCount: 0 });
+    expect(detail.body.data.images.map((image: { uploadId: string }) => image.uploadId)).toEqual(uploads.map((upload) => upload.id));
+    await request(app.getHttpServer())
+      .delete(`/api/v1/kitchens/${KITCHEN}/uploads/${uploads[0]!.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+    await request(app.getHttpServer())
+      .post(`/api/v1/kitchens/${KITCHEN}/dishes`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: '错误分类', category: '家常菜' })
+      .expect(400);
+    const temporary = await request(app.getHttpServer())
+      .post(`/api/v1/kitchens/${KITCHEN}/dishes`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ name: '当天火锅', kind: 'TEMPORARY', category: 'OTHER', effectiveDate: '2026-08-18', temporaryMealType: 'DINNER' })
+      .expect(201);
+    expect(await prisma.mealPlan.count({ where: { kitchenId: KITCHEN, dishId: temporary.body.data.id, mealDate: new Date('2026-08-18') } })).toBe(1);
+  });
   function get(prefix: string, query: string) { return request(app.getHttpServer()).get(`${prefix}/kitchens/${KITCHEN}/dishes${query}`).set('Authorization', `Bearer ${token}`); }
 });
 async function cleanup(prisma: PrismaClient) {
-  await prisma.idempotencyKey.deleteMany({ where: { userId: USER } }); await prisma.dishReview.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.dish.deleteMany({ where: { kitchenId: KITCHEN } });
+  await prisma.idempotencyKey.deleteMany({ where: { userId: USER } }); await prisma.mealPlan.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.mealPlanGroup.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.dishReview.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.dish.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.uploadFile.deleteMany({ where: { kitchenId: KITCHEN } });
   await prisma.kitchenMember.deleteMany({ where: { kitchenId: KITCHEN } }); await prisma.kitchen.deleteMany({ where: { id: KITCHEN } }); await prisma.refreshToken.deleteMany({ where: { userId: USER } }); await prisma.user.deleteMany({ where: { id: USER } });
 }

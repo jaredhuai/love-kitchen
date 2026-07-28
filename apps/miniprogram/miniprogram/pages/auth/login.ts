@@ -5,9 +5,10 @@ import { setKitchen } from '../../stores/kitchen.store';
 import { setMemberships } from '../../stores/membership.store';
 import { setUser } from '../../stores/user.store';
 import { request } from '../../utils/request';
+import { kitchenOpeningDay } from '../../utils/opening-day';
 
 Page({
-  data: { loading: false, canUseDevLogin: ENV.environment === 'development' },
+  data: { loading: false, openingDay: kitchenOpeningDay(), canUseDevLogin: ENV.environment === 'development' },
   openPrivacy() { wx.navigateTo({ url: '/pages/legal/privacy' }); },
   openTerms() { wx.navigateTo({ url: '/pages/legal/terms' }); },
   async wechatLogin() {

@@ -2,8 +2,9 @@ import { getKitchenId } from '../../stores/kitchen.store';
 import { request } from '../../utils/request';
 import { downloadFile } from '../../utils/transfer';
 
-type Dish = { id: string; name: string; description?: string | null; coverImageUrl?: string | null };
+type Dish = { id: string; name: string; description?: string | null; category?: string | null; kind?: 'PERMANENT' | 'TEMPORARY'; coverImageUrl?: string | null };
 type DishCard = Dish & { dishInitial: string; imageUrl: string };
+type CategoryCard = { code: string; name: string; icon: string; count: number };
 type MealPlan = { id: string; mealDate: string; mealType: string; servings: number; dishId?: string | null };
 type UpcomingMeal = { id: string; dishName: string; mealLabel: string; time: string };
 type UpcomingDay = { date: string; label: string; items: UpcomingMeal[] };
@@ -14,10 +15,25 @@ const mealOptions = [
   { type: 'DINNER', label: '晚餐', time: '18:00' },
   { type: 'SNACK', label: '夜宵', time: '21:00' },
 ];
+const categoryDefinitions = [
+  { code: 'MEAT', name: '荤菜', icon: '/assets/category-icons/meat.png' },
+  { code: 'VEGETABLE', name: '素菜', icon: '/assets/category-icons/vegetable.png' },
+  { code: 'SOUP_PORRIDGE', name: '汤羹粥', icon: '/assets/category-icons/soup.png' },
+  { code: 'DESSERT_SNACK', name: '甜品零食', icon: '/assets/category-icons/dessert.png' },
+  { code: 'WESTERN', name: '西餐', icon: '/assets/category-icons/western.png' },
+  { code: 'SEAFOOD', name: '海鲜', icon: '/assets/category-icons/seafood.png' },
+  { code: 'DRINK', name: '饮品', icon: '/assets/category-icons/drink.png' },
+  { code: 'STAPLE', name: '主食', icon: '/assets/category-icons/staple.png' },
+  { code: 'OTHER', name: '其他', icon: '/assets/category-icons/other.png' },
+] as const;
 
 Page({
   data: {
     dishes: [] as DishCard[],
+    visibleDishes: [] as DishCard[],
+    categories: categoryDefinitions.map((category) => ({ ...category, count: 0 })) as CategoryCard[],
+    activeCategory: '',
+    activeCategoryLabel: '',
     upcomingDays: [] as UpcomingDay[],
     loading: false,
     adding: false,
@@ -42,12 +58,21 @@ Page({
         request<Dish[]>(`/kitchens/${kitchenId}/dishes`),
         request<MealPlan[]>(`/kitchens/${kitchenId}/meal-plans`),
       ]);
-      this.setData({
-        dishes: await Promise.all(dishes.map(async (dish) => ({
+      const permanentDishes = dishes.filter((dish) => dish.kind !== 'TEMPORARY');
+      const cards = await Promise.all(permanentDishes.map(async (dish) => ({
           ...dish,
           dishInitial: dish.name.charAt(0),
           imageUrl: await resolveDishImage(kitchenId, dish.coverImageUrl),
-        }))),
+        })));
+      this.setData({
+        dishes: cards,
+        visibleDishes: this.data.activeCategory
+          ? cards.filter((dish) => normalizedCategory(dish.category) === this.data.activeCategory)
+          : [],
+        categories: categoryDefinitions.map((category) => ({
+          ...category,
+          count: cards.filter((dish) => normalizedCategory(dish.category) === category.code).length,
+        })),
         upcomingDays: buildUpcomingDays(plans, dishes),
       });
     } catch (error) {
@@ -58,6 +83,18 @@ Page({
   },
   openDish(event: WechatMiniprogram.TouchEvent) {
     wx.navigateTo({ url: `/pages/dishes/detail?dishId=${event.currentTarget.dataset.id}` });
+  },
+  chooseCategory(event: WechatMiniprogram.TouchEvent) {
+    const activeCategory = String(event.currentTarget.dataset.category || '');
+    const activeCategoryLabel = categoryDefinitions.find((category) => category.code === activeCategory)?.name || '其他';
+    this.setData({
+      activeCategory,
+      activeCategoryLabel,
+      visibleDishes: this.data.dishes.filter((dish) => normalizedCategory(dish.category) === activeCategory),
+    });
+  },
+  clearCategory() {
+    this.setData({ activeCategory: '', activeCategoryLabel: '', visibleDishes: [] });
   },
   addToMeal(event: WechatMiniprogram.TouchEvent) {
     const dish = this.data.dishes.find((candidate) => candidate.id === event.currentTarget.dataset.id);
@@ -135,4 +172,9 @@ function dateValue(date: Date) {
 function formatDateLabel(value: string) {
   const [year, month, day] = value.split('-');
   return `${year}年${Number(month)}月${Number(day)}日`;
+}
+
+function normalizedCategory(value?: string | null) {
+  if (categoryDefinitions.some((category) => category.code === value)) return value!;
+  return 'OTHER';
 }

@@ -38,7 +38,7 @@ describe('AI Orchestrator (real AppModule/PostgreSQL/Redis)', () => {
       data: {
         kitchenId: KITCHEN,
         name: '本地菜品',
-        category: '家常菜',
+        category: 'OTHER',
         cuisine: '中式',
         servings: 2,
         tags: [],

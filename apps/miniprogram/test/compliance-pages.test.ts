@@ -68,7 +68,9 @@ describe('compliance and core page smoke', () => {
     expect(read('pages/our/index.wxss')).toMatch(/\.story-delete\{[^}]*align-items:center;justify-content:center/); expect(ourView).toContain('catchtap="deleteStory"');
     expect(ourView).toContain('class="form-input"'); expect(ourView).not.toContain('class="two-col"');
     expect(read('pages/our/index.wxss')).toContain('.form-input{width:100%;height:82rpx');
-    expect(ourPage).toContain("categoryOptions = ['热菜', '凉菜', '汤羹', '主食', '小吃', '家常菜', '泡酱腌菜', '西餐', '烘焙', '烤箱菜', '饮品', '零食', '火锅', '海鲜', '自制食材']");
+    for (const category of ['MEAT', 'VEGETABLE', 'SOUP_PORRIDGE', 'DESSERT_SNACK', 'WESTERN', 'SEAFOOD', 'DRINK', 'STAPLE', 'OTHER']) expect(ourPage).toContain(category);
+    expect(ourView).toContain('永久菜品'); expect(ourView).toContain('临时菜品');
+    expect(ourView).toContain('备注详情'); expect(ourView).toContain('form.images');
     expect(ourView).toContain('bindchange="onCategoryChange"'); expect(ourView).not.toContain('菜系');
     expect(ourPage).not.toContain('onDishCuisine'); expect(ourPage).not.toContain('form.cuisine');
     expect(ourView).toContain('食材清单'); expect(ourView).toContain('bindinput="onDishIngredients"');

@@ -37,6 +37,23 @@ enum DishStatus {
   ARCHIVED
 }
 
+enum DishCategory {
+  MEAT
+  VEGETABLE
+  SOUP_PORRIDGE
+  DESSERT_SNACK
+  WESTERN
+  SEAFOOD
+  DRINK
+  STAPLE
+  OTHER
+}
+
+enum DishKind {
+  PERMANENT
+  TEMPORARY
+}
+
 enum MealType {
   BREAKFAST
   LUNCH
@@ -408,11 +425,17 @@ model Dish {
 
   description String? @db.VarChar(1000)
 
-  category String?
+  category DishCategory @default(OTHER)
 
   cuisine String?
 
   coverImageUrl String?
+
+  notes String? @db.VarChar(2000)
+
+  kind DishKind @default(PERMANENT)
+
+  effectiveDate DateTime? @db.Date
 
   difficulty Int?
 
@@ -454,8 +477,33 @@ model Dish {
 
   reviews DishReview[]
 
+  images DishImage[]
+
   @@index([kitchenId, deletedAt, createdAt])
   @@index([kitchenId, name])
+  @@index([kitchenId, kind, category])
+}
+
+model DishImage {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  dishId String @db.Uuid
+
+  uploadId String @db.Uuid
+
+  sortOrder Int
+
+  isCover Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Cascade)
+
+  @@unique([dishId, sortOrder])
+  @@unique([dishId, uploadId])
+  @@index([kitchenId, uploadId])
 }
 
 model DishIngredient {
@@ -729,6 +777,8 @@ model MealLog {
   notes String?
 
   imageUrls String[]
+
+  dishSnapshot Json?
 
   cookedBy String? @db.Uuid
 

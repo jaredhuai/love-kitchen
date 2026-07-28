@@ -128,6 +128,10 @@ export class UploadsService {
   }
 
   async remove(kitchenId: string, id: string) {
+    const references = await this.prisma.dishImage.count({
+      where: { kitchenId, uploadId: id, dish: { deletedAt: null } },
+    });
+    if (references) throw invalidUpload('图片正在被菜品使用，请先从菜品中移除');
     const file = await this.prisma.uploadFile.findFirst({
       where: { id, kitchenId, deletedAt: null, status: UploadFileStatus.ACTIVE },
     });

@@ -10,7 +10,16 @@
 
   <view class="card couple-summary"><view class="avatar">德德</view><text class="heart">♡</text><view class="avatar partner">桐桐</view><text class="caption">你和我就是全部。</text></view>
 
-  <view class="section-title section-row">菜单菜品管理<button class="small-btn add-dish-btn" bindtap="startAddDish"><text class="btn-heart">♡</text><text>＋ 添加菜品</text><text class="btn-flourish">♡</text></button></view>
+  <view class="section-title section-row">
+    <text>菜单菜品管理</text>
+    <view class="add-menu-wrap">
+      <button class="small-btn add-dish-btn" bindtap="toggleAddMenu"><text class="btn-heart">♡</text><text>＋ 添加菜品</text><text class="add-caret">{{addMenuOpen ? '⌃' : '⌄'}}</text></button>
+      <view wx:if="{{addMenuOpen}}" class="add-menu">
+        <view data-kind="PERMANENT" bindtap="startAddDish"><text>永久菜品</text><text>长期保存、随时安排</text></view>
+        <view data-kind="TEMPORARY" bindtap="startAddDish"><text>临时菜品</text><text>仅用于指定日期餐次</text></view>
+      </view>
+    </view>
+  </view>
   <view class="operator-card card">
     <text class="label">当前添加人</text>
     <picker range="{{operators}}" range-key="label" value="{{operatorIndex}}" bindchange="onOperatorChange">
@@ -20,20 +29,36 @@
   </view>
 
   <view wx:if="{{editing}}" class="dish-form card">
-    <view class="form-head"><text>{{form.dishId ? '编辑菜品' : '添加菜品'}}</text><button size="mini" bindtap="cancelEditDish">取消</button></view>
-    <view class="image-picker" bindtap="chooseDishImage">
-      <image wx:if="{{form.imageUrl}}" src="{{form.imageUrl}}" mode="aspectFit" />
-      <view wx:else class="upload-prompt"><image src="/assets/icons-c/upload.png" mode="aspectFit"/><text>上传菜品图片</text></view>
+    <view class="form-head"><text>{{form.dishId ? '编辑菜品' : (form.kind === 'TEMPORARY' ? '添加临时菜品' : '添加永久菜品')}}</text><button class="form-cancel" size="mini" bindtap="cancelEditDish">取消</button></view>
+    <view class="image-list">
+      <view wx:for="{{form.images}}" wx:key="uploadId" class="image-item">
+        <image src="{{item.imageUrl}}" mode="aspectFill" data-url="{{item.imageUrl}}" bindtap="previewDishImage"/>
+        <text wx:if="{{index === 0}}" class="cover-badge">封面</text>
+        <view class="image-actions">
+          <text wx:if="{{index > 0}}" data-index="{{index}}" bindtap="makeCover">设封面</text>
+          <text wx:if="{{index > 0}}" data-index="{{index}}" data-direction="-1" bindtap="moveImage">←</text>
+          <text wx:if="{{index < form.images.length - 1}}" data-index="{{index}}" data-direction="1" bindtap="moveImage">→</text>
+          <text data-index="{{index}}" bindtap="removeDishImage">删除</text>
+        </view>
+      </view>
+      <view wx:if="{{form.images.length < 9}}" class="image-picker" bindtap="chooseDishImages">
+        <view class="upload-prompt"><image src="/assets/icons-c/upload.png" mode="aspectFit"/><text>添加图片</text><text>{{form.images.length}} / 9</text></view>
+      </view>
     </view>
     <text wx:if="{{uploadProgress > 0 && uploadProgress < 100}}" class="muted">上传中 {{uploadProgress}}%</text>
     <text class="label">菜品名称</text><input class="form-input" value="{{form.name}}" placeholder="例如：德德爱心牛排" bindinput="onDishName" />
     <text class="label">菜品描述</text><textarea class="form-textarea" value="{{form.description}}" placeholder="口味、做法、故事都可以写在这里" bindinput="onDishDescription" />
+    <text class="label">备注详情</text><textarea class="form-textarea small" value="{{form.notes}}" placeholder="记录替换食材、注意事项或当天特别备注" bindinput="onDishNotes" />
     <text class="label">食材清单</text><textarea class="form-textarea small" value="{{form.ingredientsText}}" placeholder="例如：眼肉牛排 200g" bindinput="onDishIngredients" />
     <text class="label">步骤</text><textarea class="form-textarea" value="{{form.stepsText}}" placeholder="例如：牛排两面各煎 4min，等待美拉德反应" bindinput="onDishSteps" />
     <text class="label">分类</text>
-    <picker range="{{categoryOptions}}" value="{{categoryIndex}}" bindchange="onCategoryChange">
-      <view class="form-input picker-input">{{form.category}}</view>
+    <picker range="{{categoryOptions}}" range-key="label" value="{{categoryIndex}}" bindchange="onCategoryChange">
+      <view class="form-input picker-input">{{categoryOptions[categoryIndex].label}}</view>
     </picker>
+    <block wx:if="{{form.kind === 'TEMPORARY'}}">
+      <text class="label">适用日期</text><picker mode="date" value="{{form.effectiveDate}}" bindchange="onEffectiveDateChange"><view class="form-input picker-input">{{form.effectiveDate}}</view></picker>
+      <text class="label">适用餐次</text><picker range="{{mealTypeOptions}}" range-key="label" value="{{mealTypeIndex}}" bindchange="onMealTypeChange"><view class="form-input picker-input">{{mealTypeOptions[mealTypeIndex].label}}</view></picker>
+    </block>
     <text class="label">人数</text><input class="form-input" type="number" value="{{form.servings}}" bindinput="onDishServings" />
     <button class="primary-btn" loading="{{savingDish}}" disabled="{{savingDish}}" bindtap="saveDish"><text class="btn-heart">♡</text><text>保存菜品</text><text class="btn-flourish">♡</text></button>
     <view wx:if="{{dishError}}" class="inline-error">{{dishError}}</view>
@@ -42,13 +67,20 @@
   <view wx:if="{{dishesLoading}}" class="empty compact">菜品加载中…</view>
   <view wx:if="{{dishError && !editing}}" class="empty compact"><text>{{dishError}}</text><button size="mini" bindtap="loadDishes">重试</button></view>
   <view wx:if="{{!dishesLoading && !dishes.length}}" class="empty compact">菜单里还没有菜品，先添加一道吧。</view>
-  <view wx:for="{{dishes}}" wx:key="id" class="managed-dish card">
-    <view class="managed-main" data-id="{{item.id}}" bindtap="openDish">
-      <image wx:if="{{item.imageUrl}}" class="dish-cover" src="{{item.imageUrl}}" mode="aspectFill" />
-      <view wx:else class="dish-cover placeholder">菜</view>
-      <view class="managed-copy"><text class="dish-name">{{item.name}}</text><text class="dish-meta">添加人：{{item.addedBy}} · {{item.servings || 2}}人份</text><text class="dish-desc">{{item.displayDescription || '还没有详细描述'}}</text></view>
+  <block wx:for="{{dishes}}" wx:for-index="dishIndex" wx:key="id">
+    <view wx:if="{{dishIndex < 5 || dishesExpanded}}" class="managed-dish card">
+      <view class="managed-main" data-id="{{item.id}}" bindtap="openDish">
+        <image wx:if="{{item.imageUrl}}" class="dish-cover" src="{{item.imageUrl}}" mode="aspectFill" />
+        <view wx:else class="dish-cover placeholder">菜</view>
+      <view class="managed-copy"><text class="dish-name">{{item.name}}</text><text class="dish-meta">{{item.kind === 'TEMPORARY' ? '临时菜品 · ' : ''}}添加人：{{item.addedBy}} · {{item.servings || 2}}人份</text><text class="dish-desc">{{item.displayDescription || '还没有详细描述'}}</text></view>
+      </view>
+      <view class="dish-actions"><button size="mini" data-id="{{item.id}}" catchtap="editDish"><text class="btn-heart">♡</text><text>编辑</text></button><button size="mini" class="danger" data-id="{{item.id}}" catchtap="deleteDish">删除</button></view>
     </view>
-    <view class="dish-actions"><button size="mini" data-id="{{item.id}}" catchtap="editDish"><text class="btn-heart">♡</text><text>编辑</text></button><button size="mini" class="danger" data-id="{{item.id}}" catchtap="deleteDish">删除</button></view>
+  </block>
+  <view wx:if="{{dishes.length > 5}}" class="dish-fold hand-button" bindtap="toggleDishes">
+    <text class="btn-heart">♡</text>
+    <text>{{dishesExpanded ? '收起菜品' : '展开其余 ' + (dishes.length - 5) + ' 道菜'}}</text>
+    <text class="fold-arrow">{{dishesExpanded ? '⌃' : '⌄'}}</text>
   </view>
 
   <view class="section-title section-row"><view class="section-label"><image src="/assets/icons-c/story.png" mode="aspectFit"/>爱情时间轴</view><button class="small-btn" bindtap="addStory"><text class="btn-heart">♡</text><text>＋ 添加故事</text><text class="btn-flourish">♡</text></button></view>

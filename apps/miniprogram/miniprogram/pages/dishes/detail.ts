@@ -4,19 +4,23 @@ import { downloadFile } from '../../utils/transfer';
 
 type DishIngredient = { id?: string; displayName: string; quantity?: string | number | null; unit?: string | null };
 type RecipeStep = { id?: string; content: string };
-type DishReview = { id?: string; content?: string | null };
+type DishReview = { id?: string; content?: string | null; tasteRating?: number };
 type Dish = {
   id: string;
   name: string;
   description?: string | null;
+  notes?: string | null;
   category?: string | null;
   servings?: number | null;
   coverImageUrl?: string | null;
+  images?: Array<{ id: string; uploadId: string; sortOrder: number }>;
+  ratingAverage?: number | null;
+  ratingCount?: number;
   ingredients?: DishIngredient[];
   steps?: RecipeStep[];
   reviews?: DishReview[];
 };
-type DetailDish = Dish & { imageUrl: string; displayDescription: string; addedBy: string; ingredients: DishIngredient[]; steps: RecipeStep[]; reviews: DishReview[] };
+type DetailDish = Dish & { imageUrl: string; imageUrls: string[]; categoryLabel: string; displayDescription: string; addedBy: string; ingredients: DishIngredient[]; steps: RecipeStep[]; reviews: DishReview[] };
 
 const metaMarker = '【菜品详情】';
 const legacyAddedByPattern = /(?:^|\n)添加人：([^\n]+)\s*$/;
@@ -41,15 +45,18 @@ async function toDetailDish(kitchenId: string, dish: Dish): Promise<DetailDish> 
   const parsed = parseDescription(dish.description);
   const storedIngredients = dish.ingredients?.length ? dish.ingredients : parsed.ingredients.map((displayName, index) => ({ id: `meta-ingredient-${index}`, displayName }));
   const storedSteps = dish.steps?.length ? dish.steps : parsed.steps.map((content, index) => ({ id: `meta-step-${index}`, content }));
+  const imageUrls = await Promise.all((dish.images?.length ? dish.images.map((image) => image.uploadId) : dish.coverImageUrl ? [dish.coverImageUrl] : []).map((uploadId) => resolveDishImage(kitchenId, uploadId)));
   return {
     ...dish,
-    imageUrl: await resolveDishImage(kitchenId, dish.coverImageUrl),
+    imageUrls,
+    imageUrl: imageUrls[0] || '',
+    categoryLabel: categoryLabel(dish.category),
     displayDescription: parsed.description,
     addedBy: parsed.addedBy,
     ingredients: storedIngredients,
     steps: storedSteps,
     reviews: dish.reviews || [],
-  };
+  } as DetailDish;
 }
 
 function parseDescription(value?: string | null) {
@@ -94,4 +101,8 @@ async function resolveDishImage(kitchenId: string, reference?: string | null) {
   if (/^https?:\/\//i.test(reference)) return reference;
   try { return await downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`).promise; }
   catch { return ''; }
+}
+
+function categoryLabel(code?: string | null) {
+  return ({ MEAT: '荤菜', VEGETABLE: '素菜', SOUP_PORRIDGE: '汤羹粥', DESSERT_SNACK: '甜品零食', WESTERN: '西餐', SEAFOOD: '海鲜', DRINK: '饮品', STAPLE: '主食', OTHER: '其他' } as Record<string, string>)[code || ''] || '其他';
 }

@@ -1,5 +1,10 @@
 <view class="page">
   <view class="card login-card">
+    <view class="opening-banner">
+      <text class="opening-spark">✦</text>
+      <text>今天是小厨房开业第 <text class="opening-day">{{openingDay}}</text> 天</text>
+      <text class="opening-spark">✦</text>
+    </view>
     <view class="title">欢迎回家</view>
     <view class="muted">登录后进入只属于德德与桐桐的小厨房</view>
 

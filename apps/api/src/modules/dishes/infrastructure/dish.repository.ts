@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../infra/prisma.service';
 import type { Prisma } from '@prisma/client';
 import { enqueueAudit } from '../../../infra/outbox/enqueue-audit';
@@ -13,6 +13,7 @@ export class DishRepository {
       take,
       include: {
         reviews: true,
+        images: { orderBy: { sortOrder: 'asc' as const } },
         ingredients: { orderBy: { sortOrder: 'asc' as const } },
         steps: { orderBy: { stepNo: 'asc' as const } },
       },
@@ -37,6 +38,7 @@ export class DishRepository {
       take: limit + 1,
       include: {
         reviews: true,
+        images: { orderBy: { sortOrder: 'asc' as const } },
         ingredients: { orderBy: { sortOrder: 'asc' as const } },
         steps: { orderBy: { stepNo: 'asc' as const } },
       },
@@ -49,6 +51,7 @@ export class DishRepository {
         ingredients: { orderBy: { sortOrder: 'asc' as const } },
         steps: { orderBy: { stepNo: 'asc' as const } },
         reviews: true,
+        images: { orderBy: { sortOrder: 'asc' as const } },
       },
     });
   }
@@ -61,20 +64,57 @@ export class DishRepository {
     userId: string,
     dto: DishDtoLike,
   ) {
+    const imageUploadIds = [...new Set(dto.imageUploadIds ?? [])];
+    await this.requireUploads(tx, kitchenId, imageUploadIds);
     const dish = await tx.dish.create({
       data: {
         kitchenId,
         createdBy: userId,
         name: dto.name,
         description: dto.description ?? null,
-        category: dto.category ?? null,
+        category: dto.category ?? 'OTHER',
         cuisine: dto.cuisine ?? null,
+        notes: dto.notes ?? null,
+        kind: dto.kind ?? 'PERMANENT',
+        effectiveDate: dto.effectiveDate ? new Date(dto.effectiveDate) : null,
         servings: dto.servings ?? 2,
-        coverImageUrl: dto.coverImageUrl ?? null,
+        coverImageUrl: imageUploadIds[0] ?? dto.coverImageUrl ?? null,
         isFavorite: dto.isFavorite ?? false,
         tags: [],
       },
     });
+    if (imageUploadIds.length) {
+      await tx.dishImage.createMany({
+        data: imageUploadIds.map((uploadId, sortOrder) => ({
+          kitchenId,
+          dishId: dish.id,
+          uploadId,
+          sortOrder,
+          isCover: sortOrder === 0,
+        })),
+      });
+    }
+    if (dto.kind === 'TEMPORARY' && dto.effectiveDate && dto.temporaryMealType) {
+      const mealDate = new Date(dto.effectiveDate);
+      const weekStart = new Date(mealDate);
+      weekStart.setHours(0, 0, 0, 0);
+      const group = await tx.mealPlanGroup.upsert({
+        where: { kitchenId_weekStart: { kitchenId, weekStart } },
+        create: { kitchenId, weekStart, createdBy: userId, title: '临时菜单' },
+        update: {},
+      });
+      await tx.mealPlan.create({
+        data: {
+          kitchenId,
+          groupId: group.id,
+          createdBy: userId,
+          mealDate,
+          mealType: dto.temporaryMealType,
+          dishId: dish.id,
+          servings: dto.servings ?? 2,
+        },
+      });
+    }
     await enqueueAudit(tx, {
       kitchenId,
       userId,
@@ -89,6 +129,39 @@ export class DishRepository {
     return this.prisma.dish.updateMany({
       where: { id, kitchenId, deletedAt: null, status: 'ACTIVE' },
       data,
+    });
+  }
+  updateWithImages(kitchenId: string, id: string, data: object, imageUploadIds?: string[]) {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.dish.findFirst({
+        where: { id, kitchenId, deletedAt: null, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!current) return { count: 0 };
+      const uploads = imageUploadIds === undefined ? undefined : [...new Set(imageUploadIds)];
+      if (uploads) {
+        await this.requireUploads(tx, kitchenId, uploads);
+        await tx.dishImage.deleteMany({ where: { dishId: id, kitchenId } });
+        if (uploads.length) {
+          await tx.dishImage.createMany({
+            data: uploads.map((uploadId, sortOrder) => ({
+              kitchenId,
+              dishId: id,
+              uploadId,
+              sortOrder,
+              isCover: sortOrder === 0,
+            })),
+          });
+        }
+      }
+      await tx.dish.update({
+        where: { id },
+        data: {
+          ...data,
+          ...(uploads ? { coverImageUrl: uploads[0] ?? null } : {}),
+        },
+      });
+      return { count: 1 };
     });
   }
   remove(kitchenId: string, id: string) {
@@ -119,14 +192,31 @@ export class DishRepository {
       },
     });
   }
+
+  private async requireUploads(
+    tx: Prisma.TransactionClient,
+    kitchenId: string,
+    uploadIds: string[],
+  ) {
+    if (!uploadIds.length) return;
+    const count = await tx.uploadFile.count({
+      where: { id: { in: uploadIds }, kitchenId, deletedAt: null, status: 'ACTIVE' },
+    });
+    if (count !== uploadIds.length) throw new BadRequestException('菜品图片不存在或不属于当前厨房');
+  }
 }
 type DishDtoLike = {
   name: string;
   description?: string;
-  category?: string;
+  notes?: string;
+  category?: 'MEAT' | 'VEGETABLE' | 'SOUP_PORRIDGE' | 'DESSERT_SNACK' | 'WESTERN' | 'SEAFOOD' | 'DRINK' | 'STAPLE' | 'OTHER';
+  kind?: 'PERMANENT' | 'TEMPORARY';
+  effectiveDate?: string;
+  temporaryMealType?: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
   cuisine?: string;
   servings?: number;
   coverImageUrl?: string;
+  imageUploadIds?: string[];
   isFavorite?: boolean;
 };
 type ReviewLike = {

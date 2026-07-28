@@ -9,6 +9,32 @@
   margin: 24rpx 0 26rpx;
 }
 
+.opening-banner {
+  margin: -14rpx auto 34rpx;
+  padding: 18rpx 20rpx;
+  border: 2rpx solid #efb4c3;
+  border-radius: 22rpx;
+  background: linear-gradient(135deg, #fff2f6, #ffe4eb);
+  color: #7a4c58;
+  font-size: 25rpx;
+  font-weight: 700;
+  letter-spacing: .04em;
+  box-shadow: 0 8rpx 20rpx rgba(226, 124, 151, .13);
+  animation: banner-glow 2.4s ease-in-out infinite;
+}
+
+.opening-day {
+  margin: 0 5rpx;
+  color: #e35f84;
+  font-size: 34rpx;
+  font-family: Georgia, serif;
+}
+
+.opening-spark {
+  margin: 0 10rpx;
+  color: #ef88a4;
+}
+
 .heart-stage {
   position: relative;
   width: 300rpx;
@@ -156,4 +182,9 @@
 @keyframes sparkle {
   0%, 100% { opacity: .25; transform: translateY(8rpx) scale(.8) rotate(-8deg); }
   50% { opacity: 1; transform: translateY(-8rpx) scale(1.15) rotate(8deg); }
+}
+
+@keyframes banner-glow {
+  0%, 100% { box-shadow: 0 8rpx 20rpx rgba(226, 124, 151, .11); }
+  50% { box-shadow: 0 10rpx 28rpx rgba(226, 124, 151, .24); }
 }
