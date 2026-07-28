@@ -39,7 +39,6 @@ export const configSchema = z
     AI_OUTPUT_COST_MICROS_PER_MILLION: z.coerce.number().int().nonnegative().default(2000000),
     WECHAT_APP_ID: z.string().optional(),
     WECHAT_APP_SECRET: z.string().optional(),
-    KITCHEN_ACCESS_PASSWORD: z.string().min(8).optional(),
     SINGLE_KITCHEN_MODE: z
       .enum(['true', 'false'])
       .default('false')

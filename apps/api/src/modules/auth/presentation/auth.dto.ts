@@ -6,5 +6,4 @@ export class DevLoginDto extends DeviceDto { @ApiProperty({ example: 'user-a' })
 export class RefreshDto extends DeviceDto { @IsString() @Length(20, 1000) refreshToken!: string; }
 export class WechatLoginDto extends DeviceDto {
   @IsString() @Length(1, 512) code!: string;
-  @IsOptional() @IsString() @Length(8, 128) accessPassword?: string;
 }

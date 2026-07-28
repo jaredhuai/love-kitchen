@@ -2,12 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma, SecurityEventSeverity, SecurityEventType } from '@prisma/client';
-import { createHash, randomUUID, timingSafeEqual } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../infra/prisma.service';
 import {
   accountUnavailable,
   devLoginForbidden,
-  invalidKitchenPassword,
   kitchenMemberLimitReached,
   invalidRefreshToken,
   refreshTokenReused,
@@ -41,8 +40,7 @@ export class AuthService {
     return this.issueInitial(user.id, user.nickname, context);
   }
 
-  async wechatLogin(code: string, context: AuthRequestContext = {}, accessPassword?: string) {
-    this.assertKitchenPassword(accessPassword);
+  async wechatLogin(code: string, context: AuthRequestContext = {}) {
     let identity: WechatIdentityResult;
     try {
       identity = await this.wechat.exchange(code);
@@ -290,15 +288,6 @@ export class AuthService {
           });
       return this.response(pair, { id: userId, nickname }, membership);
     });
-  }
-
-  private assertKitchenPassword(value?: string) {
-    if (!this.config.get<boolean>('SINGLE_KITCHEN_MODE')) return;
-    const expected = this.config.getOrThrow<string>('KITCHEN_ACCESS_PASSWORD');
-    const actualBuffer = Buffer.from(value ?? '');
-    const expectedBuffer = Buffer.from(expected);
-    if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer))
-      throw invalidKitchenPassword();
   }
 
   private async ensureSingleKitchenMembership(tx: Prisma.TransactionClient, userId: string) {

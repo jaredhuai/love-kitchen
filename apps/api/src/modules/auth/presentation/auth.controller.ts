@@ -10,7 +10,7 @@ import { DevLoginDto, RefreshDto, WechatLoginDto } from './auth.dto';
 export class AuthController {
   constructor(@Inject(AuthService) private readonly auth: AuthService) {}
   @Public() @Post('dev-login') dev(@Body() dto: DevLoginDto, @Req() request: Request) { return this.auth.devLogin(dto.userKey, this.context(request, dto.deviceId)); }
-  @Public() @Post('wechat-login') wechat(@Body() dto: WechatLoginDto, @Req() request: Request) { return this.auth.wechatLogin(dto.code, this.context(request, dto.deviceId), dto.accessPassword); }
+  @Public() @Post('wechat-login') wechat(@Body() dto: WechatLoginDto, @Req() request: Request) { return this.auth.wechatLogin(dto.code, this.context(request, dto.deviceId)); }
   @Public() @Post('refresh') refresh(@Body() dto: RefreshDto, @Req() request: Request) { return this.auth.refresh(dto.refreshToken, this.context(request, dto.deviceId)); }
   @Post('logout') logout(@CurrentUser() user: { id: string }, @Body() dto: RefreshDto) { return this.auth.logout(user.id, dto.refreshToken); }
   @Post('logout-all') logoutAll(@CurrentUser() user: { id: string }) { return this.auth.logoutAll(user.id); }

@@ -1,1 +1,144 @@
-.card{margin-top:25vh}.muted{margin:24rpx 0 48rpx}.agreement-group{margin:38rpx 0}.agreement{min-height:88rpx;display:flex;align-items:center;gap:18rpx;padding:12rpx 4rpx;font-size:30rpx;line-height:1.45;color:#4a3636}.agreement checkbox{transform:scale(1.2);transform-origin:center}
+.login-card {
+  margin-top: 21vh;
+  padding: 48rpx 36rpx 42rpx;
+  text-align: center;
+  overflow: hidden;
+}
+
+.muted {
+  margin: 24rpx 0 26rpx;
+}
+
+.heart-stage {
+  position: relative;
+  width: 300rpx;
+  height: 300rpx;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.heart-entry {
+  position: relative;
+  z-index: 3;
+  width: 176rpx;
+  height: 176rpx;
+  min-height: 176rpx;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #ffd8e2, #f58ca8);
+  box-shadow:
+    0 18rpx 38rpx rgba(245, 140, 168, .3),
+    inset 0 4rpx 8rpx rgba(255, 255, 255, .8);
+  animation: heart-beat 1.8s ease-in-out infinite;
+}
+
+.heart-entry::after {
+  border: 0;
+}
+
+.heart-entry:active {
+  transform: scale(.9);
+  box-shadow: 0 8rpx 20rpx rgba(245, 140, 168, .26);
+}
+
+.heart-entry[disabled] {
+  opacity: 1;
+  background: linear-gradient(145deg, #ffe0e8, #efa2b5);
+  box-shadow: 0 12rpx 28rpx rgba(245, 140, 168, .22);
+}
+
+.heart-symbol {
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 98rpx;
+  line-height: 1;
+  text-shadow: 0 5rpx 12rpx rgba(169, 67, 94, .24);
+}
+
+.heart-halo {
+  position: absolute;
+  z-index: 1;
+  width: 170rpx;
+  height: 170rpx;
+  border: 3rpx solid rgba(245, 140, 168, .4);
+  border-radius: 50%;
+  animation: halo 2.2s ease-out infinite;
+}
+
+.halo-two {
+  animation-delay: 1.1s;
+}
+
+.spark {
+  position: absolute;
+  z-index: 2;
+  color: #f58ca8;
+  font-family: Georgia, serif;
+  animation: sparkle 2.4s ease-in-out infinite;
+}
+
+.spark-one {
+  top: 42rpx;
+  left: 38rpx;
+  font-size: 34rpx;
+}
+
+.spark-two {
+  top: 58rpx;
+  right: 38rpx;
+  font-size: 30rpx;
+  animation-delay: .65s;
+}
+
+.spark-three {
+  right: 24rpx;
+  bottom: 52rpx;
+  font-size: 28rpx;
+  animation-delay: 1.25s;
+}
+
+.heart-hint {
+  margin-top: -18rpx;
+  color: #6d4a4a;
+  font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: .05em;
+}
+
+.legal-note {
+  margin-top: 28rpx;
+  color: #aa9090;
+  font-size: 22rpx;
+  line-height: 1.8;
+}
+
+.legal-link {
+  color: #d8708d;
+  text-decoration: underline;
+}
+
+.dev-login {
+  margin-top: 28rpx;
+}
+
+@keyframes heart-beat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.08); }
+  30% { transform: scale(.98); }
+  45% { transform: scale(1.05); }
+  65% { transform: scale(1); }
+}
+
+@keyframes halo {
+  0% { opacity: .65; transform: scale(.8); }
+  100% { opacity: 0; transform: scale(1.65); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: .25; transform: translateY(8rpx) scale(.8) rotate(-8deg); }
+  50% { opacity: 1; transform: translateY(-8rpx) scale(1.15) rotate(8deg); }
+}

@@ -49,12 +49,6 @@ export const accountUnavailable = () =>
     message: '账号正在注销或已停用',
     details: null,
   });
-export const invalidKitchenPassword = () =>
-  new UnauthorizedException({
-    code: 'AUTH_KITCHEN_PASSWORD_INVALID',
-    message: '访问密码不正确',
-    details: null,
-  });
 export const kitchenMemberLimitReached = () =>
   new ForbiddenException({
     code: 'AUTH_KITCHEN_MEMBER_LIMIT_REACHED',

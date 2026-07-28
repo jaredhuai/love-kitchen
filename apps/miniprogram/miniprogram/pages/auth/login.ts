@@ -7,27 +7,22 @@ import { setUser } from '../../stores/user.store';
 import { request } from '../../utils/request';
 
 Page({
-  data: { loading: false, agreed: false, accessPassword: '', canUseDevLogin: ENV.environment === 'development' },
-  onPasswordInput(event: WechatMiniprogram.Input) { this.setData({ accessPassword: event.detail.value }); },
-  onAgreementChange(event: WechatMiniprogram.CheckboxGroupChange) { this.setData({ agreed: event.detail.value.includes('forever') }); },
-  toggleAgreement() { this.setData({ agreed: !this.data.agreed }); },
+  data: { loading: false, canUseDevLogin: ENV.environment === 'development' },
   openPrivacy() { wx.navigateTo({ url: '/pages/legal/privacy' }); },
   openTerms() { wx.navigateTo({ url: '/pages/legal/terms' }); },
   async wechatLogin() {
-    if (!this.data.agreed) return void wx.showToast({ title: '请先阅读并同意协议与隐私政策', icon: 'none' });
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
       await requirePrivacyAuthorization();
       const login = await wx.login();
       if (!login.code) throw new Error('微信登录凭证为空');
-      if (!this.data.accessPassword) throw new Error('请输入访问密码');
-      await this.completeLogin('/auth/wechat-login', { code: login.code, deviceId: deviceId(), accessPassword: this.data.accessPassword });
+      await this.completeLogin('/auth/wechat-login', { code: login.code, deviceId: deviceId() });
     } catch (error) { wx.showToast({ title: error instanceof Error ? error.message : '登录失败，请重试', icon: 'none' }); }
     finally { this.setData({ loading: false }); }
   },
   async devLogin() {
-    if (!this.data.canUseDevLogin || !this.data.agreed || this.data.loading) return;
+    if (!this.data.canUseDevLogin || this.data.loading) return;
     this.setData({ loading: true });
     try { await this.completeLogin('/auth/dev-login', { userKey: 'user-a', deviceId: deviceId() }); }
     catch (error) { wx.showToast({ title: error instanceof Error ? error.message : '登录失败', icon: 'none' }); }

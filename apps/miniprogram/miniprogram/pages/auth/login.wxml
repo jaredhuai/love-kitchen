@@ -1,1 +1,31 @@
-<view class="page"><view class="card"><view class="title">欢迎回家</view><view class="muted">登录后进入只属于德德与桐桐的小厨房</view><input password value="{{accessPassword}}" maxlength="128" bindinput="onPasswordInput" placeholder="请输入访问密码"/><checkbox-group class="agreement-group" bindchange="onAgreementChange"><label class="agreement"><checkbox value="forever" checked="{{agreed}}" color="#f58ca8"/><text>请确定和德德/桐桐相爱一辈子。</text></label></checkbox-group><button class="primary" loading="{{loading}}" disabled="{{!agreed || loading}}" bindtap="wechatLogin">微信安全登录</button><button wx:if="{{canUseDevLogin}}" disabled="{{!agreed || loading}}" bindtap="devLogin">仅开发环境登录</button></view></view>
+<view class="page">
+  <view class="card login-card">
+    <view class="title">欢迎回家</view>
+    <view class="muted">登录后进入只属于德德与桐桐的小厨房</view>
+
+    <view class="heart-stage">
+      <view class="heart-halo halo-one"></view>
+      <view class="heart-halo halo-two"></view>
+      <text class="spark spark-one">♡</text>
+      <text class="spark spark-two">✦</text>
+      <text class="spark spark-three">♡</text>
+      <button
+        class="heart-entry {{loading ? 'is-loading' : ''}}"
+        disabled="{{loading}}"
+        bindtap="wechatLogin"
+        aria-label="进入小厨房"
+      >
+        <text class="heart-symbol">{{loading ? '♡' : '♥'}}</text>
+      </button>
+    </view>
+
+    <view class="heart-hint">{{loading ? '正在打开小厨房…' : '轻触爱心，回到我们的小厨房'}}</view>
+    <view class="legal-note">
+      点击即表示同意
+      <text class="legal-link" bindtap="openTerms">用户协议</text>
+      与
+      <text class="legal-link" bindtap="openPrivacy">隐私政策</text>
+    </view>
+    <button wx:if="{{canUseDevLogin}}" class="dev-login" disabled="{{loading}}" bindtap="devLogin">仅开发环境登录</button>
+  </view>
+</view>
