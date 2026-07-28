@@ -27,7 +27,6 @@ enum InviteStatus {
 
 enum DishSource {
   MANUAL
-  AI_GENERATED
   IMPORTED
 }
 
@@ -71,7 +70,6 @@ enum SecurityEventType {
   INVITE_BRUTE_FORCE
   KITCHEN_ACCESS_DENIED
   UPLOAD_REJECTED
-  AI_ABUSE
   RATE_LIMITED
 }
 
@@ -102,13 +100,6 @@ enum AccountDeletionJobStatus {
   CANCELLED
   FAILED
   RESTORED
-}
-
-enum AiUsageStatus {
-  IN_PROGRESS
-  SUCCEEDED
-  DEGRADED
-  FAILED
 }
 
 model User {
@@ -187,31 +178,6 @@ model AccountDeletionJob {
   @@unique([userId, requestKey])
   @@index([userId, status])
   @@index([status, scheduledFor])
-}
-
-model AiUsageRecord {
-  id                    String        @id @default(uuid()) @db.Uuid
-  kitchenId             String        @db.Uuid
-  userId                String        @db.Uuid
-  requestKey            String
-  status                AiUsageStatus @default(IN_PROGRESS)
-  provider              String
-  model                  String?
-  estimatedInputTokens  Int           @default(0)
-  estimatedOutputTokens Int           @default(0)
-  costMicros            Int           @default(0)
-  latencyMs             Int?
-  response              Json?
-  errorCode             String?
-  expiresAt             DateTime
-  createdAt             DateTime      @default(now())
-  completedAt           DateTime?
-  updatedAt             DateTime      @updatedAt
-
-  @@unique([userId, kitchenId, requestKey])
-  @@index([userId, createdAt, status])
-  @@index([kitchenId, createdAt, status])
-  @@index([expiresAt])
 }
 
 model WechatIdentity {
@@ -856,44 +822,6 @@ model NutritionFood {
   source String
 
   updatedAt DateTime @updatedAt
-}
-
-model AIConversation {
-  id String @id @default(uuid()) @db.Uuid
-
-  kitchenId String @db.Uuid
-
-  userId String @db.Uuid
-
-  title String?
-
-  purpose String
-
-  createdAt DateTime @default(now())
-
-  updatedAt DateTime @updatedAt
-
-  messages AIMessage[]
-
-  @@index([kitchenId, userId])
-}
-
-model AIMessage {
-  id String @id @default(uuid()) @db.Uuid
-
-  kitchenId String @db.Uuid
-
-  conversationId String @db.Uuid
-
-  role String
-
-  content Json
-
-  createdAt DateTime @default(now())
-
-  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  @@index([kitchenId, conversationId])
 }
 
 model KitchenStory {

@@ -45,7 +45,6 @@ export class WorkerRuntime {
         now,
         this.config.IDEMPOTENCY_CLEANUP_BATCH_SIZE,
       ),
-      this.maintenance.purgeExpiredAiResponses(now, this.config.IDEMPOTENCY_CLEANUP_BATCH_SIZE),
       this.maintenance.enqueueDueDomainEvents(now),
     ])
       .then(() => undefined)

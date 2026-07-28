@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aiConversationsPageV2Schema, dishesPageV2Schema, mealHistoryPageV2Schema, notificationsPageV2Schema, timelinePageV2Schema } from './index';
+import { dishesPageV2Schema, mealHistoryPageV2Schema, notificationsPageV2Schema, timelinePageV2Schema } from './index';
 describe('API v2 contracts', () => {
   it('accepts cursor page and rejects offset shapes', () => {
     expect(dishesPageV2Schema.safeParse({ items: [], pageInfo: { nextCursor: null, hasNextPage: false } }).success).toBe(true);
@@ -19,10 +19,5 @@ describe('API v2 contracts', () => {
     const notification = { id: '73000000-0000-4000-8000-000000000001', kitchenId: '73000000-0000-4000-8000-000000000002', userId: '73000000-0000-4000-8000-000000000003', type: 'REMINDER', title: '提醒', content: '今天做饭', readAt: null, createdAt: '2026-05-01T00:00:00.000Z' };
     expect(notificationsPageV2Schema.safeParse({ items: [notification], pageInfo: { nextCursor: null, hasNextPage: false } }).success).toBe(true);
     expect(notificationsPageV2Schema.safeParse({ items: [{ ...notification, title: '' }], pageInfo: { nextCursor: null, hasNextPage: false } }).success).toBe(false);
-  });
-  it('validates AI conversation pages', () => {
-    const conversation = { id: '74000000-0000-4000-8000-000000000001', kitchenId: '74000000-0000-4000-8000-000000000002', userId: '74000000-0000-4000-8000-000000000003', purpose: 'RECOMMENDATION', title: null, createdAt: '2026-06-01T00:00:00.000Z', updatedAt: '2026-06-01T00:00:00.000Z' };
-    expect(aiConversationsPageV2Schema.safeParse({ items: [conversation], pageInfo: { nextCursor: null, hasNextPage: false } }).success).toBe(true);
-    expect(aiConversationsPageV2Schema.safeParse({ items: [{ ...conversation, purpose: '' }], pageInfo: { nextCursor: null, hasNextPage: false } }).success).toBe(false);
   });
 });

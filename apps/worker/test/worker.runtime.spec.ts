@@ -55,7 +55,6 @@ describe('WorkerRuntime', () => {
           releaseCleanup = () => resolve(0);
         }),
     );
-    const purgeExpiredAiResponses = vi.fn().mockResolvedValue(0);
     const enqueueDueDomainEvents = vi.fn().mockResolvedValue(0);
     const collectOutboxMetrics = vi.fn().mockResolvedValue({
       pending: 0,
@@ -69,7 +68,6 @@ describe('WorkerRuntime', () => {
       { processOne } as unknown as OutboxProcessor,
       {
         cleanupExpiredIdempotencyKeys,
-        purgeExpiredAiResponses,
         enqueueDueDomainEvents,
         collectOutboxMetrics,
       } as unknown as WorkerMaintenance,

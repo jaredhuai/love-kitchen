@@ -1,7 +1,6 @@
 <view class="page">
   <view class="top"><view><text class="title">德德与桐桐厨房</text><text class="muted">和你做饭的日子就是幸福的时刻</text></view></view>
   <view class="couple-card card"><view class="avatar">德德</view><text class="couple-heart">♡</text><view class="avatar partner">桐桐</view><text class="couple-caption">一起经营每一天</text></view>
-  <view class="ai-card" bindtap="openAI"><image class="feature-icon" src="/assets/icons-c/ai-chef.png" mode="aspectFit"/><view class="ai-copy"><text class="ai-title">AI 厨师推荐 <text class="new-badge">New</text></text><text class="muted">为你们推荐最合适的晚餐</text></view><text class="ai-arrow">去看看 →</text></view>
   <view class="section-title block-title">今日菜单</view>
   <view class="today-list">
     <view wx:for="{{mealSections}}" wx:key="type" class="meal-box">

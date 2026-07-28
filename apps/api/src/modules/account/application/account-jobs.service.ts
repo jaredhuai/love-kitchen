@@ -304,7 +304,7 @@ export class AccountJobsService {
       },
     });
     const kitchenIds = memberships.map(({ kitchen }) => kitchen.id);
-    const [dishes, mealLogs, preferences, conversations, letters, uploads] = await Promise.all([
+    const [dishes, mealLogs, preferences, letters, uploads] = await Promise.all([
       this.prisma.dish.findMany({
         where: { kitchenId: { in: kitchenIds }, deletedAt: null },
         select: {
@@ -337,17 +337,6 @@ export class AccountJobsService {
           preferencePayload: true,
           submittedAt: true,
           revealedAt: true,
-        },
-      }),
-      this.prisma.aIConversation.findMany({
-        where: { userId, kitchenId: { in: kitchenIds } },
-        select: {
-          id: true,
-          kitchenId: true,
-          title: true,
-          purpose: true,
-          createdAt: true,
-          messages: { select: { role: true, content: true, createdAt: true } },
         },
       }),
       this.prisma.loveLetter.findMany({
@@ -391,7 +380,6 @@ export class AccountJobsService {
         dishes,
         mealLogs,
         preferences,
-        conversations,
         letters,
         uploads,
       }),

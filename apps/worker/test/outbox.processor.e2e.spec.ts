@@ -218,42 +218,6 @@ describe('Outbox audit atomicity and processor (real PostgreSQL)', () => {
     expect(await prisma.auditLog.count({ where: { outboxEventId: event.id } })).toBe(0);
   });
 
-  it('purges only expired retained AI responses while preserving usage metrics', async () => {
-    const expired = await prisma.aiUsageRecord.create({
-      data: {
-        kitchenId: KITCHEN,
-        userId: USER,
-        requestKey: 'expired-ai-response',
-        provider: 'mock',
-        status: 'SUCCEEDED',
-        response: { secret: 'expired' },
-        costMicros: 2,
-        expiresAt: new Date(0),
-      },
-    });
-    const active = await prisma.aiUsageRecord.create({
-      data: {
-        kitchenId: KITCHEN,
-        userId: USER,
-        requestKey: 'active-ai-response',
-        provider: 'mock',
-        status: 'SUCCEEDED',
-        response: { keep: true },
-        costMicros: 3,
-        expiresAt: new Date(Date.now() + 60_000),
-      },
-    });
-    expect(await new WorkerMaintenance(prisma).purgeExpiredAiResponses(new Date(), 10)).toBe(1);
-    expect(
-      (await prisma.aiUsageRecord.findUniqueOrThrow({ where: { id: expired.id } })).response,
-    ).toBeNull();
-    expect(
-      await prisma.aiUsageRecord.findUnique({
-        where: { id: active.id },
-        select: { response: true, costMicros: true },
-      }),
-    ).toEqual({ response: { keep: true }, costMicros: 3 });
-  });
 });
 
 function createEvent(
@@ -284,9 +248,6 @@ async function cleanup(prisma: PrismaClient) {
     await prisma.consumerReceipt.deleteMany({
       where: { outboxEventId: { in: events.map(({ id }) => id) } },
     });
-  await prisma.aiUsageRecord.deleteMany({
-    where: { OR: [{ kitchenId: KITCHEN }, { userId: USER }] },
-  });
   await prisma.auditLog.deleteMany({ where: { OR: [{ kitchenId: KITCHEN }, { userId: USER }] } });
   await prisma.outboxEvent.deleteMany({ where: { kitchenId: KITCHEN } });
   await prisma.idempotencyKey.deleteMany({ where: { userId: USER } });

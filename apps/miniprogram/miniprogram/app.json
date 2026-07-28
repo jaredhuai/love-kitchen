@@ -1,6 +1,6 @@
 {
-  "pages": ["pages/launch/index", "pages/auth/login", "pages/legal/privacy", "pages/legal/terms", "pages/account/index", "pages/onboarding/index", "pages/home/index", "pages/dishes/index", "pages/dishes/detail", "pages/add/index", "pages/ai/index", "pages/meal-plan/index", "pages/stats/index", "pages/our/index"],
-  "subpackages": [{"root":"features","pages":["ai/index","meal-plan/index","pantry/index","shopping/index","timeline/index","love-letters/index","profile/index"]}],
+  "pages": ["pages/launch/index", "pages/auth/login", "pages/legal/privacy", "pages/legal/terms", "pages/account/index", "pages/onboarding/index", "pages/home/index", "pages/dishes/index", "pages/dishes/detail", "pages/add/index", "pages/meal-plan/index", "pages/stats/index", "pages/our/index"],
+  "subpackages": [{"root":"features","pages":["meal-plan/index","pantry/index","shopping/index","timeline/index","love-letters/index","profile/index"]}],
   "window": {"navigationBarTitleText":"两个人的厨房","navigationBarBackgroundColor":"#FFF9F5","navigationBarTextStyle":"black","backgroundColor":"#FFF9F5"},
   "tabBar": {"color":"#8C7474","selectedColor":"#F58CA8","backgroundColor":"#FFFFFF","list":[
     {"pagePath":"pages/home/index","text":"首页","iconPath":"assets/icons-c/home.png","selectedIconPath":"assets/icons-c/home-selected.png"},
@@ -9,5 +9,7 @@
     {"pagePath":"pages/stats/index","text":"统计","iconPath":"assets/icons-c/stats.png","selectedIconPath":"assets/icons-c/stats-selected.png"},
     {"pagePath":"pages/our/index","text":"我们的","iconPath":"assets/icons-c/couple.png","selectedIconPath":"assets/icons-c/couple-selected.png"}
   ]},
-  "style": "v2", "sitemapLocation":"sitemap.json"
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation":"sitemap.json"
 }

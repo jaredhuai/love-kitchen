@@ -86,16 +86,6 @@ pnpm db:seed
 pnpm dev
 ```
 
-AI 厨师使用阿里云百炼千问。在 `.env` 中配置 API Key 即可启用：
-
-```dotenv
-DASHSCOPE_API_KEY=sk-xxx
-QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-QWEN_MODEL=qwen3.7-plus
-```
-
-API Key 只应通过本地 `.env` 或部署环境的密钥管理注入，不要写入源码。
-
 微信开发者工具导入：
 
 ```text
