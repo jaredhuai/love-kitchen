@@ -25,7 +25,12 @@ export class DishesService {
       .filter((key) => dto[key as keyof UpdateDishDto] !== undefined)
       .map((key) => [key, key === 'effectiveDate' ? new Date(dto.effectiveDate!) : dto[key as keyof UpdateDishDto]]));
     if (!Object.keys(data).length && dto.imageUploadIds === undefined) throw dishUpdateEmpty();
-    const result = await this.repository.updateWithImages(kitchenId, id, data, dto.imageUploadIds);
+    const temporarySchedule = dto.kind === 'TEMPORARY' && dto.effectiveDate && dto.temporaryMealType
+      ? { effectiveDate: new Date(dto.effectiveDate), mealType: dto.temporaryMealType }
+      : undefined;
+    const result = temporarySchedule
+      ? await this.repository.updateWithImages(kitchenId, id, data, dto.imageUploadIds, temporarySchedule)
+      : await this.repository.updateWithImages(kitchenId, id, data, dto.imageUploadIds);
     if (result.count !== 1) throw dishNotFound();
     return this.get(kitchenId, id);
   }

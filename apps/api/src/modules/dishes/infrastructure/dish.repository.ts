@@ -132,7 +132,13 @@ export class DishRepository {
       data,
     });
   }
-  updateWithImages(kitchenId: string, id: string, data: object, imageUploadIds?: string[]) {
+  updateWithImages(
+    kitchenId: string,
+    id: string,
+    data: object,
+    imageUploadIds?: string[],
+    temporarySchedule?: { effectiveDate: Date; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' },
+  ) {
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.dish.findFirst({
         where: { id, kitchenId, deletedAt: null, status: 'ACTIVE' },
@@ -162,6 +168,12 @@ export class DishRepository {
           ...(uploads ? { coverImageUrl: uploads[0] ?? null } : {}),
         },
       });
+      if (temporarySchedule) {
+        await tx.mealPlan.updateMany({
+          where: { kitchenId, dishId: id },
+          data: { mealDate: temporarySchedule.effectiveDate, mealType: temporarySchedule.mealType },
+        });
+      }
       return { count: 1 };
     });
   }

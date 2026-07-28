@@ -29,6 +29,7 @@ export class UpdateDishDto {
   @IsOptional() @IsIn(DISH_CATEGORIES) category?: (typeof DISH_CATEGORIES)[number];
   @IsOptional() @IsIn(DISH_KINDS) kind?: (typeof DISH_KINDS)[number];
   @IsOptional() @IsDateString() effectiveDate?: string;
+  @IsOptional() @IsIn(TEMPORARY_MEAL_TYPES) temporaryMealType?: (typeof TEMPORARY_MEAL_TYPES)[number];
   @IsOptional() @IsString() cuisine?: string;
   @IsOptional() @IsInt() @Min(1) @Max(24) servings?: number;
   @IsOptional() @IsString() coverImageUrl?: string;

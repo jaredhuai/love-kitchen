@@ -93,6 +93,12 @@ describe('Dishes API v1 compatibility and v2 contract', () => {
       .send({ name: '当天火锅', kind: 'TEMPORARY', category: 'OTHER', effectiveDate: '2026-08-18', temporaryMealType: 'DINNER' })
       .expect(201);
     expect(await prisma.mealPlan.count({ where: { kitchenId: KITCHEN, dishId: temporary.body.data.id, mealDate: new Date('2026-08-18') } })).toBe(1);
+    await request(app.getHttpServer())
+      .patch(`/api/v1/kitchens/${KITCHEN}/dishes/${temporary.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ kind: 'TEMPORARY', effectiveDate: '2026-08-19', temporaryMealType: 'LUNCH', story: '临时火锅故事' })
+      .expect(200);
+    expect(await prisma.mealPlan.count({ where: { kitchenId: KITCHEN, dishId: temporary.body.data.id, mealDate: new Date('2026-08-19'), mealType: 'LUNCH' } })).toBe(1);
   });
   function get(prefix: string, query: string) { return request(app.getHttpServer()).get(`${prefix}/kitchens/${KITCHEN}/dishes${query}`).set('Authorization', `Bearer ${token}`); }
 });
