@@ -18,6 +18,7 @@ export class BusinessEventConsumers {
         'MealLog',
         'LoveLetter',
         'Anniversary',
+        'AIConversation',
         'MealPreferenceSession',
       ].includes(event.aggregateType);
     if (event.aggregateType === 'Dish')
@@ -44,6 +45,13 @@ export class BusinessEventConsumers {
     if (event.aggregateType === 'Anniversary')
       return Boolean(
         await tx.anniversary.findFirst({
+          where: { id: event.aggregateId, kitchenId: event.kitchenId },
+          select: { id: true },
+        }),
+      );
+    if (event.aggregateType === 'AIConversation')
+      return Boolean(
+        await tx.aIConversation.findFirst({
           where: { id: event.aggregateId, kitchenId: event.kitchenId },
           select: { id: true },
         }),
@@ -91,6 +99,11 @@ export class BusinessEventConsumers {
       DISH_CREATED: ['DISH_CREATED', '厨房有了新菜品', '去看看今天新增的菜品吧。'],
       MEAL_LOG_CREATED: ['MEAL_RECORDED', '共同用餐已记录', '一段新的用餐记忆已保存。'],
       PREFERENCE_REVEALED: ['PREFERENCE_REVEALED', '双方偏好已揭晓', '可以一起决定这顿吃什么了。'],
+      AI_RECOMMENDATION_CREATED: [
+        'AI_RECOMMENDATION_READY',
+        'AI 推荐已生成',
+        '新的菜品建议已准备好。',
+      ],
     };
     const message = messages[event.eventType];
     if (!message) return;

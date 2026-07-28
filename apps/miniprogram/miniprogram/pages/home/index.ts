@@ -100,6 +100,7 @@ Page({
       finally { wx.hideLoading(); }
     } });
   },
+  openAI() { wx.navigateTo({ url: '/pages/ai/index' }); },
 });
 
 async function resolveDishImage(kitchenId: string, reference?: string | null) {

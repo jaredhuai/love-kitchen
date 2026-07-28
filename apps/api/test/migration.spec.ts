@@ -170,6 +170,31 @@ describe('Migration contract on dedicated PostgreSQL', () => {
     );
   });
 
+  it('exposes AI idempotency, cost, latency and retention metadata', async () => {
+    const columns = await prisma.$queryRaw<Array<{ column_name: string }>>`
+      SELECT "column_name" FROM information_schema.columns
+      WHERE table_schema = 'public' AND "table_name" = 'AiUsageRecord'
+    `;
+    const names = new Set(columns.map(({ column_name }) => column_name));
+    expect([...names]).toEqual(
+      expect.arrayContaining([
+        'userId',
+        'kitchenId',
+        'requestKey',
+        'status',
+        'provider',
+        'model',
+        'estimatedInputTokens',
+        'estimatedOutputTokens',
+        'costMicros',
+        'latencyMs',
+        'response',
+        'errorCode',
+        'expiresAt',
+      ]),
+    );
+  });
+
   it('exposes business consumer receipts, notification sources and scheduler dedupe', async () => {
     const columns = await prisma.$queryRaw<Array<{ table_name: string; column_name: string }>>`
       SELECT "table_name", "column_name" FROM information_schema.columns
@@ -189,14 +214,5 @@ describe('Migration contract on dedicated PostgreSQL', () => {
         'OutboxEvent.dedupeKey',
       ]),
     );
-  });
-
-  it('does not retain removed AI tables', async () => {
-    const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
-      SELECT "table_name" FROM information_schema.tables
-      WHERE table_schema = 'public'
-        AND "table_name" IN ('AIConversation', 'AIMessage', 'AiUsageRecord')
-    `;
-    expect(tables).toEqual([]);
   });
 });

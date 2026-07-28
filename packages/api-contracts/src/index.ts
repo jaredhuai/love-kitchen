@@ -11,4 +11,6 @@ export const mealLogV2Schema = z.object({ id: z.string().uuid(), kitchenId: z.st
 export const mealHistoryPageV2Schema = cursorPageSchema(mealLogV2Schema);
 export const notificationV2Schema = z.object({ id: z.string().uuid(), kitchenId: z.string().uuid(), userId: z.string().uuid(), type: z.string().min(1), title: z.string().min(1), content: z.string(), readAt: z.coerce.date().nullable(), createdAt: z.coerce.date() }).passthrough();
 export const notificationsPageV2Schema = cursorPageSchema(notificationV2Schema);
+export const aiConversationV2Schema = z.object({ id: z.string().uuid(), kitchenId: z.string().uuid(), userId: z.string().uuid(), purpose: z.string().min(1), title: z.string().nullable(), createdAt: z.coerce.date(), updatedAt: z.coerce.date() }).passthrough();
+export const aiConversationsPageV2Schema = cursorPageSchema(aiConversationV2Schema);
 export type PageInfo = z.infer<typeof pageInfoSchema>;

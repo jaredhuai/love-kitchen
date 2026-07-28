@@ -19,6 +19,7 @@ import { PreferencesNutritionModule } from './modules/preferences-nutrition/pref
 import { MealPlansModule } from './modules/meal-plans/meal-plans.module';
 import { MealHistoryModule } from './modules/meal-history/meal-history.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { AiModule } from './modules/ai/ai.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { AchievementsModule } from './modules/achievements/achievements.module';
 import { RateLimitMiddleware } from './common/rate-limit.middleware';
@@ -40,6 +41,7 @@ import { AccountModule } from './modules/account/account.module';
     TimelineModule,
     MealHistoryModule,
     NotificationsModule,
+    AiModule,
     MealPlansModule,
     PreferencesNutritionModule,
     UploadsModule,

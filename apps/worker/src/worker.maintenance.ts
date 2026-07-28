@@ -64,6 +64,21 @@ export class WorkerMaintenance {
     };
   }
 
+  async purgeExpiredAiResponses(now = new Date(), batchSize = 1_000) {
+    const expired = await this.prisma.aiUsageRecord.findMany({
+      where: { expiresAt: { lt: now }, NOT: { response: { equals: Prisma.AnyNull } } },
+      select: { id: true },
+      orderBy: { expiresAt: 'asc' },
+      take: batchSize,
+    });
+    if (expired.length === 0) return 0;
+    const result = await this.prisma.aiUsageRecord.updateMany({
+      where: { id: { in: expired.map(({ id }) => id) }, expiresAt: { lt: now } },
+      data: { response: Prisma.JsonNull },
+    });
+    return result.count;
+  }
+
   async enqueueDueDomainEvents(now = new Date()) {
     const day = this.localDay(now);
     const [letters, anniversaries] = await Promise.all([
