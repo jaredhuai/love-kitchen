@@ -5,10 +5,9 @@ const homeTs = readFileSync(new URL('../miniprogram/pages/home/index.ts', import
 const aiTs = readFileSync(new URL('../miniprogram/pages/ai/index.ts', import.meta.url), 'utf8');
 const aiWxml = readFileSync(new URL('../miniprogram/pages/ai/index.wxml', import.meta.url), 'utf8');
 
-describe('AI chef entry and recommendation page', () => {
-  it('navigates from the home card to the non-tab AI page', () => {
-    expect(homeTs).toContain("wx.navigateTo({ url: '/pages/ai/index' })");
-    expect(homeTs).not.toContain("wx.switchTab({ url: '/pages/ai/index' })");
+describe('hidden AI chef page', () => {
+  it('does not expose an AI entry on the home page', () => {
+    expect(homeTs).not.toContain("wx.navigateTo({ url: '/pages/ai/index' })");
   });
 
   it('sends the required idempotency key and renders structured recommendations', () => {

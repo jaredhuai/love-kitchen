@@ -9,5 +9,7 @@
     {"pagePath":"pages/stats/index","text":"统计","iconPath":"assets/icons-c/stats.png","selectedIconPath":"assets/icons-c/stats-selected.png"},
     {"pagePath":"pages/our/index","text":"我们的","iconPath":"assets/icons-c/couple.png","selectedIconPath":"assets/icons-c/couple-selected.png"}
   ]},
-  "style": "v2", "sitemapLocation":"sitemap.json"
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
+  "sitemapLocation":"sitemap.json"
 }
