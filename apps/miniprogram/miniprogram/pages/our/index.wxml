@@ -33,7 +33,7 @@
     <text class="label">菜品名称</text><input class="form-input" value="{{form.name}}" placeholder="例如：德德爱心牛排" bindinput="onDishName" />
     <text class="label">菜品描述</text><textarea class="form-textarea description" auto-height value="{{form.description}}" placeholder="口味、做法、故事都可以写在这里" bindinput="onDishDescription" />
     <text class="label">食材清单</text><textarea class="form-textarea small" value="{{form.ingredientsText}}" placeholder="例如：眼肉牛排 200g" bindinput="onDishIngredients" />
-    <text class="label">步骤</text><textarea class="form-textarea" value="{{form.stepsText}}" placeholder="例如：牛排两面各煎 4min，等待美拉德反应" bindinput="onDishSteps" />
+    <text class="label">步骤</text><textarea class="form-textarea" maxlength="500" value="{{form.stepsText}}" placeholder="例如：牛排两面各煎 4min，等待美拉德反应" bindinput="onDishSteps" />
     <view class="note-image-head">
       <text class="label">备注详情图片</text>
       <text class="image-limit">永久、临时菜品均可上传 · 最多 9 张</text>
