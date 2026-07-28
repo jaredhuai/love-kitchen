@@ -2,6 +2,7 @@ import { getKitchenId } from '../../stores/kitchen.store';
 import { getUser } from '../../stores/user.store';
 import { request } from '../../utils/request';
 import { downloadFile } from '../../utils/transfer';
+import { mapWithConcurrency } from '../../utils/async';
 
 type Review = { id?: string; userId: string; tasteRating: number; content?: string | null; createdAt?: string; updatedAt?: string };
 type Dish = { id: string; name: string; description?: string | null; coverImageUrl?: string | null; reviews?: Review[] };
@@ -12,10 +13,10 @@ const mealLabels: Record<string, string> = { BREAKFAST: '早餐', LUNCH: '午餐
 
 Page({
   data: { completed: [] as CompletedCard[], historyReviews: [] as HistoryReview[], showHistory: false, loading: false, ratingDishId: '', error: '' },
-  async onLoad() { await this.load(); },
   async onShow() { await this.load(); },
   async onPullDownRefresh() { await this.load(); wx.stopPullDownRefresh(); },
   async load() {
+    if (this.data.loading) return;
     const kitchenId = getKitchenId(); if (!kitchenId) return;
     this.setData({ loading: true, error: '' });
     try {
@@ -24,12 +25,12 @@ Page({
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const userId = getUser()?.id;
       const todaysLogs = history.filter((log) => log.dishId && localDate(log.eatenAt) === today);
-      const imageByDish = new Map(await Promise.all([...new Set(todaysLogs.map((log) => log.dishId!))].map(async (dishId) => {
+      const imageByDish = new Map(await mapWithConcurrency([...new Set(todaysLogs.map((log) => log.dishId!))], 3, async (dishId) => {
         const dish = dishes.find((candidate) => candidate.id === dishId);
         return [dishId, await resolveDishImage(kitchenId, dish?.coverImageUrl)] as const;
-      })));
+      }));
       const reviewedDishes = dishes.filter((dish) => dish.reviews?.length);
-      const historyImageByDish = new Map(await Promise.all(reviewedDishes.map(async (dish) => [dish.id, await resolveDishImage(kitchenId, dish.coverImageUrl)] as const)));
+      const historyImageByDish = new Map(await mapWithConcurrency(reviewedDishes, 3, async (dish) => [dish.id, await resolveDishImage(kitchenId, dish.coverImageUrl)] as const));
       const historyReviews = reviewedDishes.flatMap((dish) => (dish.reviews || []).map((review, index) => {
         const dateValue = review.updatedAt || review.createdAt || '';
         const date = dateValue ? new Date(dateValue) : null;

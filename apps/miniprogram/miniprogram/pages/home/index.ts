@@ -1,6 +1,7 @@
 import { request } from '../../utils/request';
 import { downloadFile, uploadFile } from '../../utils/transfer';
 import { getKitchen } from '../../stores/kitchen.store';
+import { mapWithConcurrency } from '../../utils/async';
 
 type Dish = { id: string; name: string; coverImageUrl?: string | null };
 type MealItem = { id: string; dishId?: string; mealType: string; servings: number; name: string; imageUrl: string };
@@ -9,9 +10,9 @@ type TimelineEvent = { id: string; eventType: string; eventDate: string; descrip
 
 Page({
   data: { kitchen: {} as Record<string, string>, mealSections: emptyMealSections(), memoryText: '一起做饭的时光，比任何美食都珍贵。', memoryAuthor: '', memoryImage: '', loading: false },
-  async onLoad() { await this.load(); },
   async onShow() { await this.load(); },
   async load() {
+    if (this.data.loading) return;
     const kitchen = getKitchen() as Record<string, string> | null;
     const kitchenId = kitchen?.kitchenId || kitchen?.id;
     if (!kitchenId) return;
@@ -25,7 +26,7 @@ Page({
       const plans = plansResult.status === 'fulfilled' ? plansResult.value : [];
       const dishes = dishesResult.status === 'fulfilled' ? dishesResult.value : [];
       const timeline = timelineResult.status === 'fulfilled' ? timelineResult.value : [];
-      const imageByDish = new Map(await Promise.all(dishes.map(async (dish) => [dish.id, await resolveDishImage(kitchenId, dish.coverImageUrl)] as const)));
+      const imageByDish = new Map(await mapWithConcurrency(dishes, 3, async (dish) => [dish.id, await resolveDishImage(kitchenId, dish.coverImageUrl)] as const));
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const sections = emptyMealSections();

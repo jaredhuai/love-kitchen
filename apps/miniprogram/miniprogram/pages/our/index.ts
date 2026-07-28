@@ -1,4 +1,5 @@
 import { getKitchenId } from '../../stores/kitchen.store';
+import { mapWithConcurrency } from '../../utils/async';
 import { request } from '../../utils/request';
 import { downloadFile, uploadFile } from '../../utils/transfer';
 
@@ -87,6 +88,7 @@ Page({
   },
   async onShow() { await this.load(); },
   async load() {
+    if (this.data.loading || this.data.dishesLoading) return;
     const kitchenId = getKitchenId();
     if (!kitchenId) return;
     this.setData({ loading: true, dishesLoading: true, error: '', dishError: '' });
@@ -362,15 +364,15 @@ function filterStories(stories: Story[], date: string) {
 }
 
 async function hydrateDishes(kitchenId: string, dishes: Dish[]): Promise<ManagedDish[]> {
-  return Promise.all(dishes.map(async (dish) => {
+  return mapWithConcurrency(dishes, 3, async (dish) => {
     const parsed = parseDescription(dish.description);
     const editableUploadIds = dish.images?.length
       ? dish.images.map((image) => image.uploadId)
       : dish.coverImageUrl?.match(/^[0-9a-f-]{36}$/i) ? [dish.coverImageUrl] : [];
-    const imageItems = await Promise.all(editableUploadIds
-      .map(async (uploadId) => ({ uploadId, imageUrl: await resolveDishImage(kitchenId, uploadId) })));
+    const imageItems = await mapWithConcurrency(editableUploadIds, 2,
+      async (uploadId) => ({ uploadId, imageUrl: await resolveDishImage(kitchenId, uploadId) }));
     return { ...dish, imageUrl: imageItems[0]?.imageUrl || await resolveDishImage(kitchenId, dish.coverImageUrl), imageItems, displayDescription: parsed.description, addedBy: parsed.addedBy, ingredientsText: parsed.ingredientsText, stepsText: parsed.stepsText };
-  }));
+  });
 }
 
 function parseDescription(value?: string | null) {

@@ -1,4 +1,5 @@
 import { getKitchenId } from '../../stores/kitchen.store';
+import { mapWithConcurrency } from '../../utils/async';
 import { request } from '../../utils/request';
 import { downloadFile } from '../../utils/transfer';
 
@@ -51,20 +52,24 @@ Page({
   },
   onShow() { void this.load(); },
   async load() {
+    if (this.data.loading) return;
     const kitchenId = getKitchenId();
     if (!kitchenId) return;
     this.setData({ loading: true, error: '' });
     try {
-      const [dishes, plans] = await Promise.all([
+      const [dishesResult, plansResult] = await Promise.allSettled([
         request<Dish[]>(`/kitchens/${kitchenId}/dishes`),
         request<MealPlan[]>(`/kitchens/${kitchenId}/meal-plans`),
       ]);
+      if (dishesResult.status === 'rejected') throw dishesResult.reason;
+      const dishes = dishesResult.value;
+      const plans = plansResult.status === 'fulfilled' ? plansResult.value : [];
       const permanentDishes = dishes.filter((dish) => dish.kind !== 'TEMPORARY');
-      const cards = await Promise.all(permanentDishes.map(async (dish) => ({
+      const cards = await mapWithConcurrency(permanentDishes, 3, async (dish) => ({
           ...dish,
           dishInitial: dish.name.charAt(0),
           imageUrl: await resolveDishImage(kitchenId, dish.coverImageUrl),
-        })));
+        }));
       this.setData({
         dishes: cards,
         visibleDishes: filterMenuDishes(cards, this.data.activeCategory, this.data.searchQuery),
@@ -74,6 +79,7 @@ Page({
         })),
         upcomingDays: buildUpcomingDays(plans, dishes),
       });
+      if (plansResult.status === 'rejected') wx.showToast({ title: '未来餐单暂未加载，可稍后刷新', icon: 'none' });
     } catch (error) {
       this.setData({ error: error instanceof Error ? error.message : '菜单加载失败' });
     } finally {

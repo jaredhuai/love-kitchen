@@ -35,7 +35,8 @@ async function execute<T>(path: string, options: RequestOptions, setTask: (task:
       }
       const retryable = method === 'GET' && attempt < maxRetries && (!(error instanceof ClientApiError) || error.statusCode >= 500 || error.statusCode === 0);
       if (!retryable) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+      const delay = 350 * (2 ** attempt) + Math.floor(Math.random() * 150);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 }
@@ -45,7 +46,7 @@ function raw<T>(path: string, options: RequestOptions, setTask: (task: WechatMin
   return new Promise<T>((resolve, reject) => {
     const requestId = `mp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const task = wx.request<ApiEnvelope<T>>({
-      url: `${ENV.apiBaseUrl}${/^\/v\d+\//.test(path) ? path : `/v1${path}`}`, timeout: options.timeout ?? 10_000,
+      url: `${ENV.apiBaseUrl}${/^\/v\d+\//.test(path) ? path : `/v1${path}`}`, timeout: options.timeout ?? 15_000,
       method: (options.method ?? 'GET') as Exclude<WechatMiniprogram.RequestOption['method'], undefined>,
       ...(options.data === undefined ? {} : { data: options.data }),
       header: { ...(options.skipAuth ? {} : { Authorization: `Bearer ${getAccessToken()}` }), 'X-Request-Id': requestId, ...(options.idempotencyKey ? { 'Idempotency-Key': options.idempotencyKey } : {}) },
