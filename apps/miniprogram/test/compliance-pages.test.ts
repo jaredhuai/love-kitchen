@@ -82,6 +82,8 @@ describe('compliance and core page smoke', () => {
     expect(ourView).toContain('例如：德德爱心牛排'); expect(ourView).toContain('例如：眼肉牛排 200g'); expect(ourView).toContain('例如：牛排两面各煎 4min，等待美拉德反应');
     expect(read('pages/dishes/detail.ts')).toContain('downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`)');
     expect(read('pages/dishes/detail.wxml')).toContain('src="{{dish.imageUrl}}"');
+    expect(read('pages/dishes/detail.wxml')).toContain('bindtap="previewDishImage"');
+    expect(read('pages/dishes/detail.ts')).toContain('wx.previewImage({');
   });
   it('places menu, rating and statistics in the requested tab order', () => {
     const manifest = JSON.parse(read('app.json')) as { tabBar: { list: Array<{ pagePath: string; text: string }> } };

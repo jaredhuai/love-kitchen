@@ -39,6 +39,16 @@ Page({
       this.setData({ loading: false });
     }
   },
+  previewDishImage(event: WechatMiniprogram.TouchEvent) {
+    const dish = this.data.dish;
+    if (!dish?.imageUrls.length) return;
+    const current = String(event.currentTarget.dataset.url || dish.imageUrl);
+    wx.previewImage({
+      current,
+      urls: dish.imageUrls,
+      showmenu: true,
+    });
+  },
 });
 
 async function toDetailDish(kitchenId: string, dish: Dish): Promise<DetailDish> {
