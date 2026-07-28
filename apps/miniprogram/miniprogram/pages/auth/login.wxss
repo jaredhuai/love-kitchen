@@ -20,43 +20,58 @@
 }
 
 .heart-entry {
+  box-sizing: border-box;
   position: relative;
   z-index: 3;
   width: 176rpx;
   height: 176rpx;
-  min-height: 176rpx;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 50%;
   background: linear-gradient(145deg, #ffd8e2, #f58ca8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   box-shadow:
-    0 18rpx 38rpx rgba(245, 140, 168, .3),
-    inset 0 4rpx 8rpx rgba(255, 255, 255, .8);
+    0 20rpx 42rpx rgba(245, 140, 168, .34),
+    0 0 0 8rpx rgba(255, 225, 233, .72),
+    inset 0 5rpx 10rpx rgba(255, 255, 255, .86);
   animation: heart-beat 1.8s ease-in-out infinite;
 }
 
-.heart-entry::after {
-  border: 0;
-}
-
-.heart-entry:active {
+.heart-entry-pressed {
   transform: scale(.9);
   box-shadow: 0 8rpx 20rpx rgba(245, 140, 168, .26);
 }
 
-.heart-entry[disabled] {
-  opacity: 1;
+.heart-entry.is-loading {
   background: linear-gradient(145deg, #ffe0e8, #efa2b5);
   box-shadow: 0 12rpx 28rpx rgba(245, 140, 168, .22);
 }
 
 .heart-symbol {
+  position: relative;
+  z-index: 2;
   color: #fff;
   font-family: Georgia, serif;
-  font-size: 98rpx;
+  font-size: 104rpx;
   line-height: 1;
   text-shadow: 0 5rpx 12rpx rgba(169, 67, 94, .24);
+  transform: translateY(3rpx);
+}
+
+.heart-shine {
+  position: absolute;
+  top: 20rpx;
+  left: 31rpx;
+  width: 56rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .42);
+  transform: rotate(-28deg);
+  filter: blur(2rpx);
 }
 
 .heart-halo {

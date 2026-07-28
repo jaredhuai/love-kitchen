@@ -9,14 +9,17 @@
       <text class="spark spark-one">♡</text>
       <text class="spark spark-two">✦</text>
       <text class="spark spark-three">♡</text>
-      <button
+      <view
         class="heart-entry {{loading ? 'is-loading' : ''}}"
-        disabled="{{loading}}"
         bindtap="wechatLogin"
+        hover-class="heart-entry-pressed"
+        hover-stay-time="120"
+        role="button"
         aria-label="进入小厨房"
       >
         <text class="heart-symbol">{{loading ? '♡' : '♥'}}</text>
-      </button>
+        <view class="heart-shine"></view>
+      </view>
     </view>
 
     <view class="heart-hint">{{loading ? '正在打开小厨房…' : '轻触爱心，回到我们的小厨房'}}</view>
