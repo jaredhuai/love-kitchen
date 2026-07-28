@@ -61,6 +61,7 @@ describe('compliance and core page smoke', () => {
     expect(homeStyle).toContain('.memory-photo{display:block;width:100%;height:100%');
     expect(home).toContain('HOME_MEMORY_IMAGE'); expect(home).toContain('uploadFile<{ id: string }>'); expect(home).toContain('/timeline');
     expect(home).toContain('HOME_MEMORY_TEXT'); expect(home).toContain('已同步给对方');
+    expect(home).toContain('Promise.allSettled'); expect(home).toContain('emptyMealSections()');
     expect(homeView).toContain('memoryAuthor'); expect(homeView).toContain('点击可更新');
     expect(home).not.toContain('homeMemoryImage:'); expect(home).not.toContain('wx.setStorageSync(`${memoryImageStoragePrefix}${kitchenId}`, path)');
     const ourPage = read('pages/our/index.ts');

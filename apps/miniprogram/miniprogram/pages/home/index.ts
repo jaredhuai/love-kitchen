@@ -8,7 +8,7 @@ type MealSection = { type: string; label: string; items: MealItem[] };
 type TimelineEvent = { id: string; eventType: string; eventDate: string; description?: string | null; createdByName?: string | null };
 
 Page({
-  data: { kitchen: {} as Record<string, string>, mealSections: [] as MealSection[], memoryText: '一起做饭的时光，比任何美食都珍贵。', memoryAuthor: '', memoryImage: '', loading: false },
+  data: { kitchen: {} as Record<string, string>, mealSections: emptyMealSections(), memoryText: '一起做饭的时光，比任何美食都珍贵。', memoryAuthor: '', memoryImage: '', loading: false },
   async onLoad() { await this.load(); },
   async onShow() { await this.load(); },
   async load() {
@@ -17,18 +17,18 @@ Page({
     if (!kitchenId) return;
     this.setData({ kitchen, loading: true });
     try {
-      const [plans, dishes, timeline] = await Promise.all([
+      const [plansResult, dishesResult, timelineResult] = await Promise.allSettled([
         request<Array<{ id: string; mealDate: string; mealType: string; servings: number; dishId?: string }>>(`/kitchens/${kitchenId}/meal-plans`),
         request<Dish[]>(`/kitchens/${kitchenId}/dishes`),
         request<TimelineEvent[]>(`/kitchens/${kitchenId}/timeline`),
       ]);
+      const plans = plansResult.status === 'fulfilled' ? plansResult.value : [];
+      const dishes = dishesResult.status === 'fulfilled' ? dishesResult.value : [];
+      const timeline = timelineResult.status === 'fulfilled' ? timelineResult.value : [];
       const imageByDish = new Map(await Promise.all(dishes.map(async (dish) => [dish.id, await resolveDishImage(kitchenId, dish.coverImageUrl)] as const)));
       const now = new Date();
       const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const sections: MealSection[] = [
-        { type: 'BREAKFAST', label: '早餐', items: [] }, { type: 'LUNCH', label: '午餐', items: [] },
-        { type: 'DINNER', label: '晚餐', items: [] }, { type: 'SNACK', label: '夜宵', items: [] },
-      ];
+      const sections = emptyMealSections();
       plans.filter((plan) => plan.mealDate.slice(0, 10) === today).forEach((plan) => {
         const section = sections.find((candidate) => candidate.type === plan.mealType);
         const dish = dishes.find((candidate) => candidate.id === plan.dishId);
@@ -44,6 +44,7 @@ Page({
         memoryText: memoryEvent?.description || '一起做饭的时光，比任何美食都珍贵。',
         memoryAuthor: memoryEvent?.createdByName || memoryImageEvent?.createdByName || '',
       });
+      if (plansResult.status === 'rejected') wx.showToast({ title: '今日菜单加载失败，请稍后重试', icon: 'none' });
     } finally { this.setData({ loading: false }); }
   },
   complete(event: WechatMiniprogram.TouchEvent) {
@@ -135,6 +136,19 @@ Page({
     } });
   },
 });
+
+function emptyMealSections(): MealSection[] {
+  return [
+    { type: 'BREAKFAST', label: '早餐', items: [] },
+    { type: 'LUNCH', label: '午餐', items: [] },
+    { type: 'DINNER', label: '晚餐', items: [] },
+    { type: 'SNACK', label: '夜宵', items: [] },
+  ];
+}
+
+function dateValue(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 async function resolveDishImage(kitchenId: string, reference?: string | null) {
   if (!reference) return '';
