@@ -20,7 +20,18 @@ type Dish = {
   steps?: RecipeStep[];
   reviews?: DishReview[];
 };
-type DetailDish = Dish & { imageUrl: string; imageUrls: string[]; categoryLabel: string; displayDescription: string; addedBy: string; ingredients: DishIngredient[]; steps: RecipeStep[]; reviews: DishReview[] };
+type DetailDish = Dish & {
+  imageUrl: string;
+  imageUrls: string[];
+  imageReferences: string[];
+  fullImageUrls: string[];
+  categoryLabel: string;
+  displayDescription: string;
+  addedBy: string;
+  ingredients: DishIngredient[];
+  steps: RecipeStep[];
+  reviews: DishReview[];
+};
 
 const metaMarker = '【菜品详情】';
 const legacyAddedByPattern = /(?:^|\n)添加人：([^\n]+)\s*$/;
@@ -39,15 +50,28 @@ Page({
       this.setData({ loading: false });
     }
   },
-  previewDishImage(event: WechatMiniprogram.TouchEvent) {
+  async previewDishImage(event: WechatMiniprogram.TouchEvent) {
     const dish = this.data.dish;
     if (!dish?.imageUrls.length) return;
-    const current = String(event.currentTarget.dataset.url || dish.imageUrl);
-    wx.previewImage({
-      current,
-      urls: dish.imageUrls,
-      showmenu: true,
-    });
+    const selectedIndex = Math.max(0, Number(event.currentTarget.dataset.index) || 0);
+    let urls = dish.fullImageUrls;
+    if (urls.length !== dish.imageReferences.length) {
+      wx.showLoading({ title: '加载高清图片…', mask: true });
+      try {
+        urls = await Promise.all(dish.imageReferences.map(async (reference, index) => {
+          try { return await resolveDishOriginal(getKitchenId(), reference); }
+          catch { return dish.imageUrls[index] || ''; }
+        }));
+        this.setData({ 'dish.fullImageUrls': urls });
+      } finally {
+        wx.hideLoading();
+      }
+    }
+    const availableUrls = urls.filter(Boolean);
+    if (!availableUrls.length) return;
+    const current = urls[selectedIndex] || availableUrls[0];
+    if (!current) return;
+    wx.previewImage({ current, urls: availableUrls, showmenu: true });
   },
 });
 
@@ -55,10 +79,13 @@ async function toDetailDish(kitchenId: string, dish: Dish): Promise<DetailDish> 
   const parsed = parseDescription(dish.description);
   const storedIngredients = dish.ingredients?.length ? dish.ingredients : parsed.ingredients.map((displayName, index) => ({ id: `meta-ingredient-${index}`, displayName }));
   const storedSteps = dish.steps?.length ? dish.steps : parsed.steps.map((content, index) => ({ id: `meta-step-${index}`, content }));
-  const imageUrls = await Promise.all((dish.images?.length ? dish.images.map((image) => image.uploadId) : dish.coverImageUrl ? [dish.coverImageUrl] : []).map((uploadId) => resolveDishImage(kitchenId, uploadId)));
+  const imageReferences = dish.images?.length ? dish.images.map((image) => image.uploadId) : dish.coverImageUrl ? [dish.coverImageUrl] : [];
+  const imageUrls = await Promise.all(imageReferences.map((uploadId) => resolveDishImage(kitchenId, uploadId)));
   return {
     ...dish,
     imageUrls,
+    imageReferences,
+    fullImageUrls: [],
     imageUrl: imageUrls[0] || '',
     categoryLabel: categoryLabel(dish.category),
     displayDescription: parsed.description,
@@ -111,6 +138,12 @@ async function resolveDishImage(kitchenId: string, reference?: string | null) {
   if (/^https?:\/\//i.test(reference)) return reference;
   try { return await downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`).promise; }
   catch { return ''; }
+}
+
+async function resolveDishOriginal(kitchenId: string, reference?: string | null) {
+  if (!reference) return '';
+  if (/^https?:\/\//i.test(reference)) return reference;
+  return downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}`).promise;
 }
 
 function categoryLabel(code?: string | null) {

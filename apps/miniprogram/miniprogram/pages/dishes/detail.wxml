@@ -2,9 +2,9 @@
   <view wx:if="{{loading}}" class="empty">正在加载…</view>
   <view wx:elif="{{error}}" class="empty">{{error}}</view>
   <block wx:else>
-    <view class="hero-image"><image wx:if="{{dish.imageUrl}}" src="{{dish.imageUrl}}" mode="aspectFill" data-url="{{dish.imageUrl}}" bindtap="previewDishImage"/><text wx:else class="image-placeholder">我们的厨房</text></view>
+    <view class="hero-image"><image wx:if="{{dish.imageUrl}}" src="{{dish.imageUrl}}" mode="aspectFill" data-index="0" bindtap="previewDishImage"/><text wx:else class="image-placeholder">我们的厨房</text></view>
     <scroll-view wx:if="{{dish.imageUrls.length > 1}}" class="image-strip" scroll-x enhanced>
-      <image wx:for="{{dish.imageUrls}}" wx:key="*this" src="{{item}}" mode="aspectFill" data-url="{{item}}" bindtap="previewDishImage"/>
+      <image wx:for="{{dish.imageUrls}}" wx:key="*this" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="previewDishImage"/>
     </scroll-view>
     <view class="card dish-summary"><view class="summary-top"><view><text class="dish-title">{{dish.name}}</text><view class="tags"><text>{{dish.categoryLabel}}</text><text>添加人：{{dish.addedBy}}</text><text>{{dish.servings || 2}}人份</text></view></view></view><view wx:if="{{dish.displayDescription}}" class="dish-description">{{dish.displayDescription}}</view><view wx:if="{{dish.notes}}" class="dish-notes"><text>备注详情</text><text>{{dish.notes}}</text></view><view class="rating"><block wx:if="{{dish.ratingCount}}"><text class="stars">★</text><text> {{dish.ratingAverage}}（{{dish.ratingCount}}）</text></block><text wx:else>暂无评价</text></view></view>
     <view class="card"><view class="section-head"><text class="section-title">食材清单</text><text class="muted">{{dish.servings || 2}}人份</text></view><view wx:if="{{!dish.ingredients.length}}" class="section-empty">还没有添加食材。</view><view class="ingredient-grid"><view wx:for="{{dish.ingredients}}" wx:key="id" class="ingredient"><text class="ingredient-icon">●</text><text>{{item.displayName}}</text><text class="muted">{{item.quantity || ''}}{{item.unit || ''}}</text></view></view></view>

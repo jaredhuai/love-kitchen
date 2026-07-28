@@ -84,6 +84,8 @@ describe('compliance and core page smoke', () => {
     expect(read('pages/dishes/detail.wxml')).toContain('src="{{dish.imageUrl}}"');
     expect(read('pages/dishes/detail.wxml')).toContain('bindtap="previewDishImage"');
     expect(read('pages/dishes/detail.ts')).toContain('wx.previewImage({');
+    expect(read('pages/dishes/detail.ts')).toContain('/uploads/${encodeURIComponent(reference)}`).promise');
+    expect(read('pages/dishes/detail.ts')).toContain('加载高清图片');
   });
   it('places menu, rating and statistics in the requested tab order', () => {
     const manifest = JSON.parse(read('app.json')) as { tabBar: { list: Array<{ pagePath: string; text: string }> } };
