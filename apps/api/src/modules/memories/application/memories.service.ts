@@ -11,8 +11,11 @@ import type { AnniversaryDto, StoryCommentDto, StoryDto } from '../presentation/
    orderBy: [{ isPinned: 'desc' }, { storyDate: 'desc' }],
   });
   const userIds = [...new Set(stories.flatMap((story) => [story.createdBy, ...story.comments.map((comment) => comment.userId)]))];
-  const users = await this.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, nickname: true } });
-  const names = new Map(users.map((user) => [user.id, user.nickname]));
+  const members = await this.prisma.kitchenMember.findMany({
+   where: { kitchenId, userId: { in: userIds }, status: 'ACTIVE' },
+   select: { userId: true, role: true },
+  });
+  const names = new Map(members.map((member) => [member.userId, member.role === 'OWNER' ? '德德' : '桐桐']));
   return stories.map((story) => ({
    ...story,
    createdByName: names.get(story.createdBy) ?? '厨房成员',
@@ -23,11 +26,11 @@ import type { AnniversaryDto, StoryCommentDto, StoryDto } from '../presentation/
  async createComment(kitchenId: string, storyId: string, userId: string, dto: StoryCommentDto) {
   const story = await this.prisma.kitchenStory.findFirst({ where: { id: storyId, kitchenId, deletedAt: null }, select: { id: true } });
   if (!story) throw storyNotFound();
-  const [comment, user] = await Promise.all([
+  const [comment, member] = await Promise.all([
    this.prisma.storyComment.create({ data: { kitchenId, storyId, userId, content: dto.content.trim() } }),
-   this.prisma.user.findUnique({ where: { id: userId }, select: { nickname: true } }),
+   this.prisma.kitchenMember.findFirst({ where: { kitchenId, userId, status: 'ACTIVE' }, select: { role: true } }),
   ]);
-  return { ...comment, authorName: user?.nickname ?? '厨房成员' };
+  return { ...comment, authorName: member ? member.role === 'OWNER' ? '德德' : '桐桐' : '厨房成员' };
  }
  async deleteStory(kitchenId: string, id: string) { const result = await this.prisma.kitchenStory.updateMany({ where: { id, kitchenId, deletedAt: null }, data: { deletedAt: new Date() } }); if (result.count !== 1) throw storyNotFound(); return { deleted: true }; }
  anniversaries(kitchenId: string) { return this.prisma.anniversary.findMany({ where: { kitchenId }, orderBy: { date: 'asc' } }); }

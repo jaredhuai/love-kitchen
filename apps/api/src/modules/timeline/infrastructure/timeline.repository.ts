@@ -10,7 +10,7 @@ export class TimelineRepository {
 
   async listLegacy(kitchenId: string) {
     const rows = await this.prisma.timelineEvent.findMany({ where: { kitchenId }, orderBy: [{ eventDate: 'desc' }, { id: 'desc' }] });
-    return this.withAuthorNames(rows);
+    return this.withAuthorNames(kitchenId, rows);
   }
 
   async listCursor(kitchenId: string, limit: number, cursor?: { eventDate: Date; id: string }) {
@@ -19,7 +19,7 @@ export class TimelineRepository {
       orderBy: [{ eventDate: 'desc' }, { id: 'desc' }],
       take: limit + 1,
     });
-    return this.withAuthorNames(rows);
+    return this.withAuthorNames(kitchenId, rows);
   }
 
   create(kitchenId: string, userId: string, dto: TimelineInput) {
@@ -34,10 +34,13 @@ export class TimelineRepository {
     return { kitchenId, createdBy: userId, title: dto.title, eventType: dto.eventType, eventDate: new Date(dto.eventDate), description: dto.description ?? null, generatedBySystem: false };
   }
 
-  private async withAuthorNames<T extends { createdBy: string | null }>(rows: T[]) {
+  private async withAuthorNames<T extends { createdBy: string | null }>(kitchenId: string, rows: T[]) {
     const ids = [...new Set(rows.flatMap((row) => row.createdBy ? [row.createdBy] : []))];
-    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, nickname: true } });
-    const names = new Map(users.map((user) => [user.id, user.nickname]));
+    const members = await this.prisma.kitchenMember.findMany({
+      where: { kitchenId, userId: { in: ids }, status: 'ACTIVE' },
+      select: { userId: true, role: true },
+    });
+    const names = new Map(members.map((member) => [member.userId, member.role === 'OWNER' ? '德德' : '桐桐']));
     return rows.map((row) => ({ ...row, createdByName: row.createdBy ? names.get(row.createdBy) ?? '厨房成员' : '系统' }));
   }
 }

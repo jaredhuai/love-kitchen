@@ -23,8 +23,8 @@ describe('V4 shared memories and story comments', () => {
     await prisma.$connect();
     await cleanup(prisma);
     await prisma.user.createMany({ data: [
-      { id: OWNER, devKey: 'v4-owner', nickname: '德德' },
-      { id: PARTNER, devKey: 'v4-partner', nickname: '桐桐' },
+      { id: OWNER, devKey: 'v4-owner', nickname: '微信用户' },
+      { id: PARTNER, devKey: 'v4-partner', nickname: '微信用户' },
     ] });
     await prisma.kitchen.create({ data: { id: KITCHEN, name: 'V4厨房', createdBy: OWNER } });
     await prisma.kitchenMember.createMany({ data: [
