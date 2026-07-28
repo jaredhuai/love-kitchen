@@ -16,15 +16,15 @@ const mealOptions = [
   { type: 'SNACK', label: '夜宵', time: '21:00' },
 ];
 const categoryDefinitions = [
-  { code: 'MEAT', name: '荤菜', icon: '/assets/category-icons/meat.webp' },
-  { code: 'VEGETABLE', name: '素菜', icon: '/assets/category-icons/vegetable.webp' },
-  { code: 'SOUP_PORRIDGE', name: '汤羹粥', icon: '/assets/category-icons/soup.webp' },
-  { code: 'DESSERT_SNACK', name: '甜品零食', icon: '/assets/category-icons/dessert.webp' },
-  { code: 'WESTERN', name: '西餐', icon: '/assets/category-icons/western.webp' },
-  { code: 'SEAFOOD', name: '海鲜', icon: '/assets/category-icons/seafood.webp' },
-  { code: 'DRINK', name: '饮品', icon: '/assets/category-icons/drink.webp' },
-  { code: 'STAPLE', name: '主食', icon: '/assets/category-icons/staple.webp' },
-  { code: 'OTHER', name: '其他', icon: '/assets/category-icons/other.webp' },
+  { code: 'MEAT', name: '荤菜', icon: '/assets/category-icons/meat.png' },
+  { code: 'VEGETABLE', name: '素菜', icon: '/assets/category-icons/vegetable.png' },
+  { code: 'SOUP_PORRIDGE', name: '汤羹粥', icon: '/assets/category-icons/soup.png' },
+  { code: 'DESSERT_SNACK', name: '甜品零食', icon: '/assets/category-icons/dessert.png' },
+  { code: 'WESTERN', name: '西餐', icon: '/assets/category-icons/western.png' },
+  { code: 'SEAFOOD', name: '海鲜', icon: '/assets/category-icons/seafood.png' },
+  { code: 'DRINK', name: '饮品', icon: '/assets/category-icons/drink.png' },
+  { code: 'STAPLE', name: '主食', icon: '/assets/category-icons/staple.png' },
+  { code: 'OTHER', name: '其他', icon: '/assets/category-icons/other.png' },
 ] as const;
 
 Page({
