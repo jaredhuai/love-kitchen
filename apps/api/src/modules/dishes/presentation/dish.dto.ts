@@ -9,6 +9,7 @@ export class DishDto {
   @IsString() @Length(1, 100) name!: string;
   @IsOptional() @IsString() @Length(0, 1000) description?: string;
   @IsOptional() @IsString() @Length(0, 2000) notes?: string;
+  @IsOptional() @IsString() @Length(0, 3000) story?: string;
   @IsOptional() @IsIn(DISH_CATEGORIES) category?: (typeof DISH_CATEGORIES)[number];
   @IsOptional() @IsIn(DISH_KINDS) kind?: (typeof DISH_KINDS)[number];
   @IsOptional() @IsDateString() effectiveDate?: string;
@@ -24,6 +25,7 @@ export class UpdateDishDto {
   @IsOptional() @IsString() @Length(1, 100) name?: string;
   @IsOptional() @IsString() @Length(0, 1000) description?: string;
   @IsOptional() @IsString() @Length(0, 2000) notes?: string;
+  @IsOptional() @IsString() @Length(0, 3000) story?: string;
   @IsOptional() @IsIn(DISH_CATEGORIES) category?: (typeof DISH_CATEGORIES)[number];
   @IsOptional() @IsIn(DISH_KINDS) kind?: (typeof DISH_KINDS)[number];
   @IsOptional() @IsDateString() effectiveDate?: string;

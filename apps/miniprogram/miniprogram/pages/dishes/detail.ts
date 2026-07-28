@@ -10,6 +10,7 @@ type Dish = {
   name: string;
   description?: string | null;
   notes?: string | null;
+  story?: string | null;
   category?: string | null;
   servings?: number | null;
   coverImageUrl?: string | null;

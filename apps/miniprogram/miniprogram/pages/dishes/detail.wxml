@@ -10,6 +10,6 @@
     <view class="card"><view class="section-head"><text class="section-title">食材清单</text><text class="muted">{{dish.servings || 2}}人份</text></view><view wx:if="{{!dish.ingredients.length}}" class="section-empty">还没有添加食材。</view><view class="ingredient-grid"><view wx:for="{{dish.ingredients}}" wx:key="id" class="ingredient"><text class="ingredient-icon">●</text><text>{{item.displayName}}</text><text class="muted">{{item.quantity || ''}}{{item.unit || ''}}</text></view></view></view>
     <view class="card"><view class="section-head"><text class="section-title">步骤</text><text class="muted">按顺序完成</text></view><view wx:if="{{!dish.steps.length}}" class="section-empty">还没有添加步骤。</view><view wx:for="{{dish.steps}}" wx:key="id" class="step"><text class="step-no">{{index + 1}}</text><text>{{item.content}}</text></view></view>
     <view class="card"><view class="section-head"><text class="section-title">双方评价</text><text class="muted">共 {{dish.reviews.length || 0}} 条</text></view><view wx:for="{{dish.reviews}}" wx:key="id" class="review"><view class="review-avatar">♡</view><view><text>我们的厨房成员</text><text class="review-stars">★★★★★</text><text class="muted">{{item.content || '没有留下文字评价'}}</text></view></view></view>
-    <view class="card story"><text class="section-title">我们的故事</text><text class="muted">每一道菜，都记录着我们一起生活的片段。</text></view>
+    <view class="card story"><text class="section-title">我们的故事</text><text class="dish-story">{{dish.story || '还没有写下这道菜的故事。可以在菜品编辑中补充。'}}</text></view>
   </block>
 </view>

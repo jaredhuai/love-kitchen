@@ -21,7 +21,7 @@ export class DishesService {
   createV2(kitchenId: string, userId: string, key: string | undefined, dto: DishDto) { this.validateTemporary(dto); if (!this.idempotency) throw new Error('IdempotencyService 未配置'); return this.idempotency.execute(userId, `v2:dishes:create:${kitchenId}`, key, dto, (tx) => this.repository.createInTransaction(tx, kitchenId, userId, dto)); }
   async update(kitchenId: string, id: string, dto: UpdateDishDto) {
     if (dto.category && !DISH_CATEGORIES.includes(dto.category)) throw new BadRequestException('菜品分类无效');
-    const data = Object.fromEntries(['name', 'description', 'notes', 'category', 'kind', 'effectiveDate', 'cuisine', 'servings', 'coverImageUrl', 'isFavorite']
+    const data = Object.fromEntries(['name', 'description', 'notes', 'story', 'category', 'kind', 'effectiveDate', 'cuisine', 'servings', 'coverImageUrl', 'isFavorite']
       .filter((key) => dto[key as keyof UpdateDishDto] !== undefined)
       .map((key) => [key, key === 'effectiveDate' ? new Date(dto.effectiveDate!) : dto[key as keyof UpdateDishDto]]));
     if (!Object.keys(data).length && dto.imageUploadIds === undefined) throw dishUpdateEmpty();

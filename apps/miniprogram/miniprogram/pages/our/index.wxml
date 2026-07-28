@@ -33,6 +33,7 @@
     <text class="label">菜品名称</text><input class="form-input" value="{{form.name}}" placeholder="例如：德德爱心牛排" bindinput="onDishName" />
     <text class="label">菜品描述</text><textarea class="form-textarea" value="{{form.description}}" placeholder="口味、做法、故事都可以写在这里" bindinput="onDishDescription" />
     <text class="label">备注详情</text><textarea class="form-textarea small" value="{{form.notes}}" placeholder="记录替换食材、注意事项或当天特别备注" bindinput="onDishNotes" />
+    <text class="label">我们的故事</text><textarea class="form-textarea small" value="{{form.dishStory}}" placeholder="记录这道菜属于你们的特别回忆" bindinput="onDishStory" />
     <text class="label">食材清单</text><textarea class="form-textarea small" value="{{form.ingredientsText}}" placeholder="例如：眼肉牛排 200g" bindinput="onDishIngredients" />
     <text class="label">步骤</text><textarea class="form-textarea" value="{{form.stepsText}}" placeholder="例如：牛排两面各煎 4min，等待美拉德反应" bindinput="onDishSteps" />
     <view class="note-image-head">
@@ -88,7 +89,23 @@
   </view>
 
   <view class="section-title section-row"><view class="section-label"><image src="/assets/icons-c/story.png" mode="aspectFit"/>爱情时间轴</view><button class="small-btn" bindtap="addStory"><text class="btn-heart">♡</text><text>＋ 添加故事</text><text class="btn-flourish">♡</text></button></view>
-  <view wx:if="{{!loading && !stories.length}}" class="empty">还没有故事，写下第一个值得记住的瞬间吧。</view>
-  <view wx:for="{{stories}}" wx:key="id" class="timeline card"><view class="dot"></view><view class="story-copy" style="min-width:0;flex:1;"><text class="event-title">{{item.title}}</text><text class="muted">{{item.displayDate}}</text><text class="event-desc">{{item.content}}</text></view><view class="story-delete hand-button" data-id="{{item.id}}" catchtap="deleteStory">删除</view></view>
+  <view class="story-calendar card">
+    <picker mode="date" value="{{selectedStoryDate}}" bindchange="onStoryDateChange"><view class="calendar-button">♡ {{selectedStoryDate || '选择日期查看回忆'}} <text>▾</text></view></picker>
+    <button wx:if="{{selectedStoryDate}}" class="calendar-clear" size="mini" bindtap="clearStoryDate">查看全部</button>
+  </view>
+  <view wx:if="{{!loading && !visibleStories.length}}" class="empty">{{selectedStoryDate ? '这一天还没有留下故事。' : '还没有故事，写下第一个值得记住的瞬间吧。'}}</view>
+  <view wx:for="{{visibleStories}}" wx:key="id" class="timeline card">
+    <view class="dot"></view>
+    <view class="story-copy">
+      <text class="event-title">{{item.title}}</text>
+      <text class="story-author">{{item.displayDate}} · 添加者：{{item.createdByName || '厨房成员'}}</text>
+      <text class="event-desc">{{item.content}}</text>
+      <view wx:if="{{item.comments.length}}" class="story-comments">
+        <view wx:for="{{item.comments}}" wx:for-item="comment" wx:key="id" class="story-comment"><text>{{comment.authorName}}：</text><text>{{comment.content}}</text></view>
+      </view>
+      <button class="comment-button" size="mini" data-id="{{item.id}}" catchtap="addStoryComment">♡ 评论</button>
+    </view>
+    <view class="story-delete hand-button" data-id="{{item.id}}" catchtap="deleteStory">删除</view>
+  </view>
 
 </view>

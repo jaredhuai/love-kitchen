@@ -433,6 +433,8 @@ model Dish {
 
   notes String? @db.VarChar(2000)
 
+  story String? @db.VarChar(3000)
+
   kind DishKind @default(PERMANENT)
 
   effectiveDate DateTime? @db.Date
@@ -975,7 +977,30 @@ model KitchenStory {
 
   deletedAt DateTime?
 
+  comments StoryComment[]
+
   @@index([kitchenId, deletedAt, storyDate])
+}
+
+model StoryComment {
+  id String @id @default(uuid()) @db.Uuid
+
+  kitchenId String @db.Uuid
+
+  storyId String @db.Uuid
+
+  userId String @db.Uuid
+
+  content String @db.VarChar(1000)
+
+  createdAt DateTime @default(now())
+
+  deletedAt DateTime?
+
+  story KitchenStory @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  @@index([storyId, deletedAt, createdAt])
+  @@index([kitchenId, userId])
 }
 
 model AchievementDefinition {

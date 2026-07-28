@@ -43,6 +43,8 @@ describe('compliance and core page smoke', () => {
     expect(mealPlan).toContain("method: 'POST'");
     expect(mealPlan).toContain("method: 'DELETE'");
     expect(mealPlan).toContain('removeUpcoming');
+    expect(mealPlan).toContain('onSearchInput'); expect(mealPlan).toContain('filterMenuDishes');
+    expect(view).toContain('placeholder="搜索菜品"'); expect(view).toContain('搜索结果');
     expect(view).toContain('bindtap="removeUpcoming"');
     expect(view).toContain('class="meal-grid"'); expect(view).toContain('bindtap="openDish"'); expect(view).not.toContain('catchtap="complete"'); expect(view).not.toContain('catchtap="cancel"');
     expect(view).toContain("{{adding ? '加入中…' : '加入餐次'}}");
@@ -58,6 +60,8 @@ describe('compliance and core page smoke', () => {
     expect(homeView).toContain('class="memory-photo"'); expect(homeView).toContain('mode="aspectFit"');
     expect(homeStyle).toContain('.memory-photo{display:block;width:100%;height:100%');
     expect(home).toContain('HOME_MEMORY_IMAGE'); expect(home).toContain('uploadFile<{ id: string }>'); expect(home).toContain('/timeline');
+    expect(home).toContain('HOME_MEMORY_TEXT'); expect(home).toContain('已同步给对方');
+    expect(homeView).toContain('memoryAuthor'); expect(homeView).toContain('点击可更新');
     expect(home).not.toContain('homeMemoryImage:'); expect(home).not.toContain('wx.setStorageSync(`${memoryImageStoragePrefix}${kitchenId}`, path)');
     const ourPage = read('pages/our/index.ts');
     const ourView = read('pages/our/index.wxml');
@@ -79,6 +83,9 @@ describe('compliance and core page smoke', () => {
     expect(ourPage).not.toContain('onDishCuisine'); expect(ourPage).not.toContain('form.cuisine');
     expect(ourView).toContain('食材清单'); expect(ourView).toContain('bindinput="onDishIngredients"');
     expect(ourView).toContain('bindinput="onDishSteps"'); expect(ourPage).toContain('withDishMeta');
+    expect(ourView).toContain('bindinput="onDishStory"'); expect(ourPage).toContain('story: form.dishStory.trim()');
+    expect(ourView).toContain('mode="date"'); expect(ourView).toContain('addStoryComment');
+    expect(ourView).toContain('添加者：'); expect(ourView).toContain('comment.authorName');
     expect(ourView).toContain('例如：德德爱心牛排'); expect(ourView).toContain('例如：眼肉牛排 200g'); expect(ourView).toContain('例如：牛排两面各煎 4min，等待美拉德反应');
     expect(read('pages/dishes/detail.ts')).toContain('downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`)');
     expect(read('pages/dishes/detail.wxml')).toContain('src="{{dish.imageUrl}}"');
@@ -86,6 +93,7 @@ describe('compliance and core page smoke', () => {
     expect(read('pages/dishes/detail.ts')).toContain('wx.previewImage({');
     expect(read('pages/dishes/detail.ts')).toContain('/uploads/${encodeURIComponent(reference)}`).promise');
     expect(read('pages/dishes/detail.ts')).toContain('加载高清图片');
+    expect(read('pages/dishes/detail.wxml')).toContain("dish.story || '还没有写下这道菜的故事。可以在菜品编辑中补充。'");
   });
   it('places menu, rating and statistics in the requested tab order', () => {
     const manifest = JSON.parse(read('app.json')) as { tabBar: { list: Array<{ pagePath: string; text: string }> } };

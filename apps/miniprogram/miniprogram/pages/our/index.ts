@@ -7,6 +7,7 @@ type Dish = {
   name: string;
   description?: string | null;
   notes?: string | null;
+  story?: string | null;
   category?: string | null;
   kind?: 'PERMANENT' | 'TEMPORARY';
   effectiveDate?: string | null;
@@ -16,12 +17,14 @@ type Dish = {
 };
 type FormImage = { uploadId: string; imageUrl: string };
 type ManagedDish = Dish & { imageUrl: string; imageItems: FormImage[]; displayDescription: string; addedBy: string; ingredientsText: string; stepsText: string };
-type Story = { id: string; title: string; content: string; storyDate: string; displayDate: string };
+type StoryComment = { id: string; content: string; authorName: string; createdAt: string };
+type Story = { id: string; title: string; content: string; storyDate: string; displayDate: string; createdByName?: string; comments?: StoryComment[] };
 type FormData = {
   dishId: string;
   name: string;
   description: string;
   notes: string;
+  dishStory: string;
   ingredientsText: string;
   stepsText: string;
   category: string;
@@ -55,13 +58,15 @@ const mealTypeOptions = [
   { code: 'DINNER', label: '晚餐' },
   { code: 'SNACK', label: '夜宵' },
 ];
-const emptyForm = (): FormData => ({ dishId: '', name: '', description: '', notes: '', ingredientsText: '', stepsText: '', category: 'OTHER', kind: 'PERMANENT', effectiveDate: dateValue(new Date()), temporaryMealType: 'DINNER', servings: 2, images: [], legacyCoverImageUrl: '', imagesTouched: false });
+const emptyForm = (): FormData => ({ dishId: '', name: '', description: '', notes: '', dishStory: '', ingredientsText: '', stepsText: '', category: 'OTHER', kind: 'PERMANENT', effectiveDate: dateValue(new Date()), temporaryMealType: 'DINNER', servings: 2, images: [], legacyCoverImageUrl: '', imagesTouched: false });
 const metaMarker = '【菜品详情】';
 const legacyAddedByPattern = /(?:^|\n)添加人：([^\n]+)\s*$/;
 
 Page({
   data: {
     stories: [] as Story[],
+    visibleStories: [] as Story[],
+    selectedStoryDate: '',
     dishes: [] as ManagedDish[],
     operators,
     categoryOptions,
@@ -90,7 +95,8 @@ Page({
         request<Story[]>(`/kitchens/${kitchenId}/stories`),
         request<Dish[]>(`/kitchens/${kitchenId}/dishes`),
       ]);
-      this.setData({ stories: stories.map(toDisplayStory), dishes: await hydrateDishes(kitchenId, dishes) });
+      const displayedStories = stories.map(toDisplayStory);
+      this.setData({ stories: displayedStories, visibleStories: filterStories(displayedStories, this.data.selectedStoryDate), dishes: await hydrateDishes(kitchenId, dishes) });
     } catch (error) {
       this.setData({ error: error instanceof Error ? error.message : '加载失败' });
     } finally {
@@ -125,6 +131,7 @@ Page({
         name: dish.name,
         description: dish.displayDescription,
         notes: dish.notes || '',
+        dishStory: dish.story || '',
         ingredientsText: dish.ingredientsText,
         stepsText: dish.stepsText,
         category,
@@ -142,6 +149,7 @@ Page({
   onDishName(event: WechatMiniprogram.Input) { this.setData({ 'form.name': event.detail.value }); },
   onDishDescription(event: WechatMiniprogram.Input) { this.setData({ 'form.description': event.detail.value }); },
   onDishNotes(event: WechatMiniprogram.Input) { this.setData({ 'form.notes': event.detail.value }); },
+  onDishStory(event: WechatMiniprogram.Input) { this.setData({ 'form.dishStory': event.detail.value }); },
   onDishIngredients(event: WechatMiniprogram.Input) { this.setData({ 'form.ingredientsText': event.detail.value }); },
   onDishSteps(event: WechatMiniprogram.Input) { this.setData({ 'form.stepsText': event.detail.value }); },
   onDishServings(event: WechatMiniprogram.Input) { this.setData({ 'form.servings': Math.max(1, Math.min(24, Number(event.detail.value) || 2)) }); },
@@ -211,6 +219,7 @@ Page({
           name: form.name.trim(),
           description: withDishMeta(form.description.trim(), operator, form.ingredientsText.trim(), form.stepsText.trim()),
           notes: form.notes.trim(),
+          story: form.dishStory.trim(),
           category: form.category,
           kind: form.kind,
           ...(form.kind === 'TEMPORARY' ? { effectiveDate: form.effectiveDate, temporaryMealType: form.temporaryMealType } : {}),
@@ -293,7 +302,33 @@ Page({
     const kitchenId = getKitchenId();
     if (!kitchenId) return;
     const stories = await request<Story[]>(`/kitchens/${kitchenId}/stories`);
-    this.setData({ stories: stories.map(toDisplayStory) });
+    const displayedStories = stories.map(toDisplayStory);
+    this.setData({ stories: displayedStories, visibleStories: filterStories(displayedStories, this.data.selectedStoryDate) });
+  },
+  onStoryDateChange(event: WechatMiniprogram.PickerChange) {
+    const selectedStoryDate = String(event.detail.value);
+    this.setData({ selectedStoryDate, visibleStories: filterStories(this.data.stories, selectedStoryDate) });
+  },
+  clearStoryDate() { this.setData({ selectedStoryDate: '', visibleStories: this.data.stories }); },
+  addStoryComment(event: WechatMiniprogram.TouchEvent) {
+    const storyId = String(event.currentTarget.dataset.id || '');
+    if (!storyId) return;
+    wx.showModal({
+      title: '写下评论',
+      editable: true,
+      placeholderText: '回复这段共同回忆',
+      success: async (result) => {
+        const content = result.content?.trim() || '';
+        if (!result.confirm || !content) return;
+        try {
+          await request(`/kitchens/${getKitchenId()}/stories/${storyId}/comments`, { method: 'POST', data: { content } });
+          await this.loadStories();
+          wx.showToast({ title: '评论已发送', icon: 'success' });
+        } catch (error) {
+          wx.showToast({ title: error instanceof Error ? error.message : '评论失败', icon: 'none' });
+        }
+      },
+    });
   },
   deleteStory(event: WechatMiniprogram.TouchEvent) {
     const storyId = event.currentTarget.dataset.id as string;
@@ -319,6 +354,10 @@ function toDisplayStory(story: Story): Story {
   const date = new Date(story.storyDate);
   const displayDate = Number.isNaN(date.getTime()) ? story.storyDate : `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
   return { ...story, displayDate };
+}
+
+function filterStories(stories: Story[], date: string) {
+  return date ? stories.filter((story) => story.storyDate.slice(0, 10) === date) : stories;
 }
 
 async function hydrateDishes(kitchenId: string, dishes: Dish[]): Promise<ManagedDish[]> {

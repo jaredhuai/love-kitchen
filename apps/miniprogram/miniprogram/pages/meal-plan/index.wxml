@@ -1,5 +1,8 @@
 <view class="page">
-  <view class="header"><view><text class="title">所有菜单</text><text class="subtitle">快快快，宝宝饿了！</text></view></view>
+  <view class="header">
+    <view class="header-copy"><text class="title">所有菜单</text><text class="subtitle">快快快，宝宝饿了！</text></view>
+    <view class="menu-search"><text class="search-heart">♡</text><input value="{{searchQuery}}" placeholder="搜索菜品" confirm-type="search" bindinput="onSearchInput"/><text wx:if="{{searchQuery}}" class="search-clear" bindtap="clearSearch">×</text></view>
+  </view>
   <view wx:if="{{loading}}" class="empty">正在加载…</view>
   <view wx:if="{{error}}" class="empty"><text>{{error}}</text><button bindtap="load">重试</button></view>
   <view wx:if="{{!loading && !error && !dishes.length}}" class="empty">菜品库还没有菜品。</view>
@@ -16,12 +19,12 @@
       <text class="category-count">{{item.count ? item.count + ' 道菜' : '暂无菜品'}}</text>
     </view>
   </view>
-  <view wx:if="{{activeCategory}}" class="category-section-head">
-    <view><text class="category-section-title">{{activeCategoryLabel}}</text><text class="category-section-count">共 {{visibleDishes.length}} 道菜</text></view>
-    <view class="category-back hand-button" bindtap="clearCategory">收起</view>
+  <view wx:if="{{activeCategory || searchQuery}}" class="category-section-head">
+    <view><text class="category-section-title">{{searchQuery ? '搜索结果' : activeCategoryLabel}}</text><text class="category-section-count">共 {{visibleDishes.length}} 道菜</text></view>
+    <view wx:if="{{activeCategory && !searchQuery}}" class="category-back hand-button" bindtap="clearCategory">收起</view>
   </view>
-  <view wx:if="{{activeCategory && !visibleDishes.length}}" class="category-empty">这个分类还没有菜品，期待第一道美味 ♡</view>
-  <view wx:if="{{activeCategory && visibleDishes.length}}" class="meal-grid">
+  <view wx:if="{{(activeCategory || searchQuery) && !visibleDishes.length}}" class="category-empty">{{searchQuery ? '没有找到包含「' + searchQuery + '」的菜品' : '这个分类还没有菜品，期待第一道美味 ♡'}}</view>
+  <view wx:if="{{(activeCategory || searchQuery) && visibleDishes.length}}" class="meal-grid">
     <view wx:for="{{visibleDishes}}" wx:key="id" class="meal-card">
       <view class="image-wrap" data-id="{{item.id}}" bindtap="openDish">
         <image wx:if="{{item.imageUrl}}" class="meal-image" src="{{item.imageUrl}}" mode="aspectFill" />

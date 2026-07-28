@@ -12,6 +12,7 @@ export const dishV2Schema = z.object({
   category: dishCategorySchema,
   kind: dishKindSchema,
   notes: z.string().nullable().optional(),
+  story: z.string().nullable().optional(),
   effectiveDate: z.coerce.date().nullable().optional(),
   ratingAverage: z.number().min(1).max(5).nullable().optional(),
   ratingCount: z.number().int().nonnegative().optional(),

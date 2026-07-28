@@ -8,16 +8,18 @@ type TimelineInput = { title: string; eventType: string; eventDate: string; desc
 export class TimelineRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  listLegacy(kitchenId: string) {
-    return this.prisma.timelineEvent.findMany({ where: { kitchenId }, orderBy: [{ eventDate: 'desc' }, { id: 'desc' }] });
+  async listLegacy(kitchenId: string) {
+    const rows = await this.prisma.timelineEvent.findMany({ where: { kitchenId }, orderBy: [{ eventDate: 'desc' }, { id: 'desc' }] });
+    return this.withAuthorNames(rows);
   }
 
-  listCursor(kitchenId: string, limit: number, cursor?: { eventDate: Date; id: string }) {
-    return this.prisma.timelineEvent.findMany({
+  async listCursor(kitchenId: string, limit: number, cursor?: { eventDate: Date; id: string }) {
+    const rows = await this.prisma.timelineEvent.findMany({
       where: { kitchenId, ...(cursor ? { OR: [{ eventDate: { lt: cursor.eventDate } }, { eventDate: cursor.eventDate, id: { lt: cursor.id } }] } : {}) },
       orderBy: [{ eventDate: 'desc' }, { id: 'desc' }],
       take: limit + 1,
     });
+    return this.withAuthorNames(rows);
   }
 
   create(kitchenId: string, userId: string, dto: TimelineInput) {
@@ -30,5 +32,12 @@ export class TimelineRepository {
 
   private createData(kitchenId: string, userId: string, dto: TimelineInput) {
     return { kitchenId, createdBy: userId, title: dto.title, eventType: dto.eventType, eventDate: new Date(dto.eventDate), description: dto.description ?? null, generatedBySystem: false };
+  }
+
+  private async withAuthorNames<T extends { createdBy: string | null }>(rows: T[]) {
+    const ids = [...new Set(rows.flatMap((row) => row.createdBy ? [row.createdBy] : []))];
+    const users = await this.prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, nickname: true } });
+    const names = new Map(users.map((user) => [user.id, user.nickname]));
+    return rows.map((row) => ({ ...row, createdByName: row.createdBy ? names.get(row.createdBy) ?? '厨房成员' : '系统' }));
   }
 }

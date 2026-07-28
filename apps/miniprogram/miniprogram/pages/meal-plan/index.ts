@@ -34,6 +34,7 @@ Page({
     categories: categoryDefinitions.map((category) => ({ ...category, count: 0 })) as CategoryCard[],
     activeCategory: '',
     activeCategoryLabel: '',
+    searchQuery: '',
     upcomingDays: [] as UpcomingDay[],
     loading: false,
     adding: false,
@@ -66,9 +67,7 @@ Page({
         })));
       this.setData({
         dishes: cards,
-        visibleDishes: this.data.activeCategory
-          ? cards.filter((dish) => normalizedCategory(dish.category) === this.data.activeCategory)
-          : [],
+        visibleDishes: filterMenuDishes(cards, this.data.activeCategory, this.data.searchQuery),
         categories: categoryDefinitions.map((category) => ({
           ...category,
           count: cards.filter((dish) => normalizedCategory(dish.category) === category.code).length,
@@ -90,11 +89,21 @@ Page({
     this.setData({
       activeCategory,
       activeCategoryLabel,
-      visibleDishes: this.data.dishes.filter((dish) => normalizedCategory(dish.category) === activeCategory),
+      visibleDishes: filterMenuDishes(this.data.dishes, activeCategory, this.data.searchQuery),
     });
   },
   clearCategory() {
-    this.setData({ activeCategory: '', activeCategoryLabel: '', visibleDishes: [] });
+    this.setData({ activeCategory: '', activeCategoryLabel: '', visibleDishes: filterMenuDishes(this.data.dishes, '', this.data.searchQuery) });
+  },
+  onSearchInput(event: WechatMiniprogram.Input) {
+    const searchQuery = event.detail.value.trim();
+    this.setData({
+      searchQuery,
+      visibleDishes: filterMenuDishes(this.data.dishes, this.data.activeCategory, searchQuery),
+    });
+  },
+  clearSearch() {
+    this.setData({ searchQuery: '', visibleDishes: filterMenuDishes(this.data.dishes, this.data.activeCategory, '') });
   },
   addToMeal(event: WechatMiniprogram.TouchEvent) {
     const dish = this.data.dishes.find((candidate) => candidate.id === event.currentTarget.dataset.id);
@@ -177,4 +186,12 @@ function formatDateLabel(value: string) {
 function normalizedCategory(value?: string | null) {
   if (categoryDefinitions.some((category) => category.code === value)) return value!;
   return 'OTHER';
+}
+
+function filterMenuDishes(dishes: DishCard[], category: string, query: string) {
+  const keyword = query.trim().toLocaleLowerCase();
+  return dishes.filter((dish) => {
+    if (keyword) return dish.name.toLocaleLowerCase().includes(keyword);
+    return category ? normalizedCategory(dish.category) === category : false;
+  });
 }

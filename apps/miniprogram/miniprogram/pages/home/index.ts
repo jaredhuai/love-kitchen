@@ -5,10 +5,10 @@ import { getKitchen } from '../../stores/kitchen.store';
 type Dish = { id: string; name: string; coverImageUrl?: string | null };
 type MealItem = { id: string; dishId?: string; mealType: string; servings: number; name: string; imageUrl: string };
 type MealSection = { type: string; label: string; items: MealItem[] };
-type TimelineEvent = { id: string; eventType: string; eventDate: string; description?: string | null };
+type TimelineEvent = { id: string; eventType: string; eventDate: string; description?: string | null; createdByName?: string | null };
 
 Page({
-  data: { kitchen: {} as Record<string, string>, mealSections: [] as MealSection[], memoryText: '一起做饭的时光，比任何美食都珍贵。', memoryImage: '', loading: false },
+  data: { kitchen: {} as Record<string, string>, mealSections: [] as MealSection[], memoryText: '一起做饭的时光，比任何美食都珍贵。', memoryAuthor: '', memoryImage: '', loading: false },
   async onLoad() { await this.load(); },
   async onShow() { await this.load(); },
   async load() {
@@ -34,9 +34,16 @@ Page({
         const dish = dishes.find((candidate) => candidate.id === plan.dishId);
         if (section) section.items.push({ id: plan.id, mealType: plan.mealType, servings: plan.servings, name: dish?.name || '已安排菜品', imageUrl: dish ? imageByDish.get(dish.id) || '' : '', ...(dish ? { dishId: dish.id } : {}) });
       });
-      const memoryFileId = timeline.find((event) => event.eventType === 'HOME_MEMORY_IMAGE')?.description || '';
+      const memoryEvent = timeline.find((event) => event.eventType === 'HOME_MEMORY_TEXT' && dateValue(new Date(event.eventDate)) === today);
+      const memoryImageEvent = timeline.find((event) => event.eventType === 'HOME_MEMORY_IMAGE' && dateValue(new Date(event.eventDate)) === today);
+      const memoryFileId = memoryImageEvent?.description || '';
       const memoryImage = memoryFileId ? await resolveMemoryImage(kitchenId, memoryFileId) : '';
-      this.setData({ mealSections: sections, memoryImage });
+      this.setData({
+        mealSections: sections,
+        memoryImage,
+        memoryText: memoryEvent?.description || '一起做饭的时光，比任何美食都珍贵。',
+        memoryAuthor: memoryEvent?.createdByName || memoryImageEvent?.createdByName || '',
+      });
     } finally { this.setData({ loading: false }); }
   },
   complete(event: WechatMiniprogram.TouchEvent) {
@@ -78,7 +85,34 @@ Page({
     } });
   },
   openDish(event: WechatMiniprogram.TouchEvent) { const dishId = event.currentTarget.dataset.id; if (dishId) wx.navigateTo({ url: `/pages/dishes/detail?dishId=${dishId}` }); },
-  editMemory() { wx.showModal({ title: '编辑温暖记录', editable: true, content: this.data.memoryText, success: (result) => { if (result.confirm && result.content) this.setData({ memoryText: result.content }); } }); },
+  editMemory() {
+    wx.showModal({
+      title: '编辑温暖记录',
+      editable: true,
+      content: this.data.memoryText,
+      success: async (result) => {
+        const content = result.content?.trim() || '';
+        if (!result.confirm || !content) return;
+        const kitchen = getKitchen() as Record<string, string>;
+        const kitchenId = kitchen.kitchenId || kitchen.id;
+        if (!kitchenId) return;
+        wx.showLoading({ title: '正在同步', mask: true });
+        try {
+          await request(`/v2/kitchens/${kitchenId}/timeline`, {
+            method: 'POST',
+            idempotencyKey: `home-memory-text-${Date.now()}`,
+            data: { title: '更新了今日温暖记录', eventType: 'HOME_MEMORY_TEXT', eventDate: new Date().toISOString(), description: content },
+          });
+          await this.load();
+          wx.showToast({ title: '已同步给对方', icon: 'success' });
+        } catch (error) {
+          wx.showToast({ title: error instanceof Error ? error.message : '同步失败', icon: 'none' });
+        } finally {
+          wx.hideLoading();
+        }
+      },
+    });
+  },
   chooseMemoryImage() {
     wx.chooseMedia({ count: 1, mediaType: ['image'], success: async (result) => {
       const file = result.tempFiles?.[0];

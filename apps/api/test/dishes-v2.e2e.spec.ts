@@ -64,13 +64,19 @@ describe('Dishes API v1 compatibility and v2 contract', () => {
     const permanent = await request(app.getHttpServer())
       .post(`/api/v1/kitchens/${KITCHEN}/dishes`)
       .set('Authorization', `Bearer ${token}`)
-      .send({ name: 'V3荤菜', category: 'MEAT', notes: '少盐', imageUploadIds: uploads.map((upload) => upload.id) })
+      .send({ name: 'V3荤菜', category: 'MEAT', notes: '少盐', story: '第一次一起学会的菜', imageUploadIds: uploads.map((upload) => upload.id) })
       .expect(201);
     const detail = await request(app.getHttpServer())
       .get(`/api/v1/kitchens/${KITCHEN}/dishes/${permanent.body.data.id}`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
-    expect(detail.body.data).toMatchObject({ category: 'MEAT', notes: '少盐', ratingAverage: null, ratingCount: 0 });
+    expect(detail.body.data).toMatchObject({ category: 'MEAT', notes: '少盐', story: '第一次一起学会的菜', ratingAverage: null, ratingCount: 0 });
+    await request(app.getHttpServer())
+      .patch(`/api/v1/kitchens/${KITCHEN}/dishes/${permanent.body.data.id}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ story: '后来又一起做了很多次' })
+      .expect(200);
+    expect((await prisma.dish.findUniqueOrThrow({ where: { id: permanent.body.data.id } })).story).toBe('后来又一起做了很多次');
     expect(detail.body.data.images.map((image: { uploadId: string }) => image.uploadId)).toEqual(uploads.map((upload) => upload.id));
     await request(app.getHttpServer())
       .delete(`/api/v1/kitchens/${KITCHEN}/uploads/${uploads[0]!.id}`)

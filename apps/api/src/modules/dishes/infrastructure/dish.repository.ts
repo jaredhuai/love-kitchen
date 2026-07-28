@@ -75,6 +75,7 @@ export class DishRepository {
         category: dto.category ?? 'OTHER',
         cuisine: dto.cuisine ?? null,
         notes: dto.notes ?? null,
+        story: dto.story ?? null,
         kind: dto.kind ?? 'PERMANENT',
         effectiveDate: dto.effectiveDate ? new Date(dto.effectiveDate) : null,
         servings: dto.servings ?? 2,
@@ -209,6 +210,7 @@ type DishDtoLike = {
   name: string;
   description?: string;
   notes?: string;
+  story?: string;
   category?: 'MEAT' | 'VEGETABLE' | 'SOUP_PORRIDGE' | 'DESSERT_SNACK' | 'WESTERN' | 'SEAFOOD' | 'DRINK' | 'STAPLE' | 'OTHER';
   kind?: 'PERMANENT' | 'TEMPORARY';
   effectiveDate?: string;

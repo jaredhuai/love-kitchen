@@ -15,5 +15,5 @@
       </view>
     </view>
   </view>
-  <view class="section-title memory-heading"><image class="heading-icon" src="/assets/icons-c/story.png" mode="aspectFit"/>今日的温暖记录</view><view class="memory-wrap"><view class="memory-note" bindtap="editMemory">{{memoryText}}<text class="note-heart">♡</text></view><view class="photo-placeholder" bindtap="chooseMemoryImage"><image wx:if="{{memoryImage}}" class="memory-photo" src="{{memoryImage}}" mode="aspectFit"/><view wx:else class="upload-empty"><image src="/assets/icons-c/upload.png" mode="aspectFit"/><text>添加照片</text></view></view></view>
+  <view class="section-title memory-heading"><image class="heading-icon" src="/assets/icons-c/story.png" mode="aspectFit"/>今日的温暖记录</view><view class="memory-wrap"><view class="memory-note" bindtap="editMemory"><text class="memory-content">{{memoryText}}</text><text wx:if="{{memoryAuthor}}" class="memory-author">由 {{memoryAuthor}} 添加 · 点击可更新</text><text wx:else class="memory-author">点击添加共享记录</text><text class="note-heart">♡</text></view><view class="photo-placeholder" bindtap="chooseMemoryImage"><image wx:if="{{memoryImage}}" class="memory-photo" src="{{memoryImage}}" mode="aspectFit"/><view wx:else class="upload-empty"><image src="/assets/icons-c/upload.png" mode="aspectFit"/><text>添加照片</text></view></view></view>
 </view>
