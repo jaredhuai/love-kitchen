@@ -70,7 +70,9 @@ describe('compliance and core page smoke', () => {
     expect(read('pages/our/index.wxss')).toContain('.form-input{width:100%;height:82rpx');
     for (const category of ['MEAT', 'VEGETABLE', 'SOUP_PORRIDGE', 'DESSERT_SNACK', 'WESTERN', 'SEAFOOD', 'DRINK', 'STAPLE', 'OTHER']) expect(ourPage).toContain(category);
     expect(ourView).toContain('永久菜品'); expect(ourView).toContain('临时菜品');
-    expect(ourView).toContain('备注详情'); expect(ourView).toContain('form.images');
+    expect(ourView).toContain('备注详情'); expect(ourView).toContain('备注详情图片');
+    expect(ourView).toContain('永久、临时菜品均可上传 · 最多 9 张');
+    expect(ourView).toContain('form.images'); expect(ourView).toContain('chooseDishImages');
     expect(ourView).toContain('bindchange="onCategoryChange"'); expect(ourView).not.toContain('菜系');
     expect(ourPage).not.toContain('onDishCuisine'); expect(ourPage).not.toContain('form.cuisine');
     expect(ourView).toContain('食材清单'); expect(ourView).toContain('bindinput="onDishIngredients"');
