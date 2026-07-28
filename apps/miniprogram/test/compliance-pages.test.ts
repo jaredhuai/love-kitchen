@@ -73,6 +73,8 @@ describe('compliance and core page smoke', () => {
     expect(ourView).toContain('备注详情'); expect(ourView).toContain('备注详情图片');
     expect(ourView).toContain('永久、临时菜品均可上传 · 最多 9 张');
     expect(ourView).toContain('form.images'); expect(ourView).toContain('chooseDishImages');
+    expect(ourView.indexOf('bindinput="onDishSteps"')).toBeLessThan(ourView.indexOf('备注详情图片'));
+    expect(ourView.indexOf('备注详情图片')).toBeLessThan(ourView.indexOf('<text class="label">分类</text>'));
     expect(ourView).toContain('bindchange="onCategoryChange"'); expect(ourView).not.toContain('菜系');
     expect(ourPage).not.toContain('onDishCuisine'); expect(ourPage).not.toContain('form.cuisine');
     expect(ourView).toContain('食材清单'); expect(ourView).toContain('bindinput="onDishIngredients"');
