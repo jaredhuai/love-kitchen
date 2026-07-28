@@ -1,6 +1,23 @@
 node_modules
 .pnpm-store
+# Local/private configuration
 .env
+.env.*
+!.env.example
+*.local
+*.local.*
+config.local.*
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.db
+*.sqlite
+*.sqlite3
 dist
 coverage
 uploads
@@ -9,7 +26,6 @@ uploads
 !apps/api/src/modules/uploads/**
 *.log
 .DS_Store
-apps/api/prisma/*.db
 apps/miniprogram/project.private.config.json
 HANDOFF.md
-docs
+docs/
