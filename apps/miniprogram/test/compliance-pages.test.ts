@@ -85,7 +85,9 @@ describe('compliance and core page smoke', () => {
     expect(ourView).toContain('食材清单'); expect(ourView).toContain('bindinput="onDishIngredients"');
     expect(ourView).toContain('bindinput="onDishSteps"'); expect(ourPage).toContain('withDishMeta');
     expect(ourView).toContain('bindinput="onDishStory"'); expect(ourPage).toContain('story: form.dishStory.trim()');
+    expect(ourView.indexOf('bindinput="onDishServings"')).toBeLessThan(ourView.indexOf('bindinput="onDishStory"'));
     expect(ourView).toContain('mode="date"'); expect(ourView).toContain('addStoryComment');
+    expect(ourPage).toContain('评论服务尚未更新，请先部署新版 API');
     expect(ourView).toContain('添加者：'); expect(ourView).toContain('comment.authorName');
     expect(ourView).toContain('例如：德德爱心牛排'); expect(ourView).toContain('例如：眼肉牛排 200g'); expect(ourView).toContain('例如：牛排两面各煎 4min，等待美拉德反应');
     expect(read('pages/dishes/detail.ts')).toContain('downloadFile(`/kitchens/${kitchenId}/uploads/${encodeURIComponent(reference)}/thumbnail`)');

@@ -325,7 +325,8 @@ Page({
           await this.loadStories();
           wx.showToast({ title: '评论已发送', icon: 'success' });
         } catch (error) {
-          wx.showToast({ title: error instanceof Error ? error.message : '评论失败', icon: 'none' });
+          const message = error instanceof Error ? error.message : '评论失败';
+          wx.showToast({ title: message.includes('Cannot POST') ? '评论服务尚未更新，请先部署新版 API' : message, icon: 'none' });
         }
       },
     });

@@ -33,7 +33,6 @@
     <text class="label">菜品名称</text><input class="form-input" value="{{form.name}}" placeholder="例如：德德爱心牛排" bindinput="onDishName" />
     <text class="label">菜品描述</text><textarea class="form-textarea" value="{{form.description}}" placeholder="口味、做法、故事都可以写在这里" bindinput="onDishDescription" />
     <text class="label">备注详情</text><textarea class="form-textarea small" value="{{form.notes}}" placeholder="记录替换食材、注意事项或当天特别备注" bindinput="onDishNotes" />
-    <text class="label">我们的故事</text><textarea class="form-textarea small" value="{{form.dishStory}}" placeholder="记录这道菜属于你们的特别回忆" bindinput="onDishStory" />
     <text class="label">食材清单</text><textarea class="form-textarea small" value="{{form.ingredientsText}}" placeholder="例如：眼肉牛排 200g" bindinput="onDishIngredients" />
     <text class="label">步骤</text><textarea class="form-textarea" value="{{form.stepsText}}" placeholder="例如：牛排两面各煎 4min，等待美拉德反应" bindinput="onDishSteps" />
     <view class="note-image-head">
@@ -65,6 +64,7 @@
       <text class="label">适用餐次</text><picker range="{{mealTypeOptions}}" range-key="label" value="{{mealTypeIndex}}" bindchange="onMealTypeChange"><view class="form-input picker-input">{{mealTypeOptions[mealTypeIndex].label}}</view></picker>
     </block>
     <text class="label">人数</text><input class="form-input" type="number" value="{{form.servings}}" bindinput="onDishServings" />
+    <text class="label">我们的故事</text><textarea class="form-textarea small" value="{{form.dishStory}}" placeholder="记录这道菜属于你们的特别回忆" bindinput="onDishStory" />
     <button class="primary-btn" loading="{{savingDish}}" disabled="{{savingDish}}" bindtap="saveDish"><text class="btn-heart">♡</text><text>保存菜品</text><text class="btn-flourish">♡</text></button>
     <view wx:if="{{dishError}}" class="inline-error">{{dishError}}</view>
   </view>
